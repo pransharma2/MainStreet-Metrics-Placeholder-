@@ -124,6 +124,10 @@ export function MappingTable({
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (data?.redirect && typeof data.redirect === "string") {
+            router.push(data.redirect);
+            return;
+          }
           throw new Error(
             data?.error ??
               "We couldn't build your dashboard from this file. Please try again."

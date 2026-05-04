@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Chrome } from "lucide-react";
@@ -20,13 +21,27 @@ function SubmitButton() {
   );
 }
 
+// Reads ?confirm=... from the URL. Wrapped in a Suspense boundary below so
+// static prerendering doesn't bail out of the whole /login page.
+function ConfirmEmailNotice() {
+  const params = useSearchParams();
+  const confirmNotice = params?.get("confirm");
+  if (!confirmNotice) return null;
+  return (
+    <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-brand-200 bg-brand-50/70 px-3.5 py-3 text-sm text-brand-900">
+      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" />
+      <span>
+        Check your inbox — we sent you a link to confirm your email.
+      </span>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const [state, formAction] = useFormState<AuthFormState, FormData>(
     loginAction,
     null
   );
-  const params = useSearchParams();
-  const confirmNotice = params?.get("confirm");
 
   return (
     <Card className="w-full max-w-md p-8">
@@ -39,14 +54,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {confirmNotice && (
-        <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-brand-200 bg-brand-50/70 px-3.5 py-3 text-sm text-brand-900">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" />
-          <span>
-            Check your inbox — we sent you a link to confirm your email.
-          </span>
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <ConfirmEmailNotice />
+      </Suspense>
 
       {state?.error && (
         <div

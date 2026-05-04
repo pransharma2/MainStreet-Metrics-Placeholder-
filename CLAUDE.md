@@ -26,7 +26,7 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 
 ## 2. Current Project Status
 
-**Phase 1, Phase 2, and Phase 3 are complete. Phase 3 has not yet been fully end-to-end tested by the user against a live Supabase project.**
+**Phase 1, Phase 2, Phase 3, and Phase 3.5 (verification + hardening) are complete. `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.**
 
 ### Phase 1 — Frontend MVP (done)
 - Polished frontend-first MVP shell
@@ -102,6 +102,16 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 - Extended `lib/types/db.ts` with row types for every new table + insert-shape types
 - `import "server-only"` preserved on `lib/workspace.ts`, `lib/dashboard-data.ts`, `lib/supabase/server.ts`, `lib/supabase/admin.ts`; no client component imports any of them
 
+### Phase 3.5 — Verification + hardening (done)
+- Migrated from `pnpm` to `npm`. `pnpm-lock.yaml` deleted, `packageManager` field removed from `package.json`, `package-lock.json` generated. All docs now reference `npm install` / `npm run dev` / `npm run typecheck` / `npm run build` only.
+- QA pass against schema, RLS, process endpoint, validation, dashboard fallback, and all 3 sample CSVs. Every sample CSV runs end-to-end through the real pure-processing chain cleanly (verified with a throwaway harness that was then cleaned up).
+- `lib/column-detect.ts` — added `ticket`, `ticketnumber`, `receipt`, `receiptnumber` to `order_id` detection so Square/Toast/cafe-style POS exports auto-map correctly.
+- `app/api/uploads/[id]/process/route.ts` — stricter status gate: `uploaded` and `parsed` uploads now rejected with a friendly "Please finish matching your columns first" + `redirect` back to the mapping page. `mapped`, `processed`, `failed` still allowed.
+- `app/api/uploads/[id]/process/route.ts` — **race-safe status claim**: the `→ processing` transition is now a conditional update (`.eq("id", uploadId).in("status", ["mapped","processed","failed"])`) that returns `null` on contention, producing a friendly 409. Two concurrent Build clicks can't both process the same upload.
+- `components/dashboard/build-dashboard-button.tsx` and `components/mapping/mapping-table.tsx` — follow `redirect` field in 409 responses (sends user back to mapping when needed).
+- **Fonts self-hosted** — replaced `next/font/google` with `@fontsource-variable/inter` + `@fontsource-variable/fraunces`. `--font-inter` / `--font-display` CSS variables now defined in `app/globals.css`; Tailwind tokens unchanged. Builds no longer fetch `fonts.googleapis.com`.
+- `app/(auth)/login/page.tsx` — wrapped `useSearchParams()` in a `<Suspense>` boundary (pre-existing Phase 2 issue that was masked by the font failure). `npm run build` now passes cleanly end-to-end.
+
 ---
 
 ## 3. Important Design Direction
@@ -158,7 +168,7 @@ User-facing language must be friendly and non-technical. Examples:
 - **Recharts** (charts)
 - **Framer Motion** (hero fade-up, subtle interactions)
 - **lucide-react** icons
-- **Fonts:** Inter (body) + Fraunces (display)
+- **Fonts:** Inter (body) + Fraunces (display) — self-hosted via `@fontsource-variable/*`, no build-time fetch of Google Fonts
 
 ### Backend
 - **Supabase Auth** (email/password; Google OAuth stubbed)

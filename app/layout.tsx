@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Fraunces } from "next/font/google";
+// Self-hosted variable fonts via @fontsource-variable. The font files ship
+// inside node_modules, so the production build does NOT fetch from
+// fonts.googleapis.com and works offline / on restricted networks.
+// The matching --font-inter and --font-display CSS variables are set in
+// app/globals.css so Tailwind's font-sans/font-display classes keep working.
+import "@fontsource-variable/inter";
+import "@fontsource-variable/fraunces";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const display = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "MainStreet Metrics — Clean dashboards for small businesses",
@@ -33,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${display.variable}`}>
+    <html lang="en">
       <body className="min-h-screen bg-background font-sans text-foreground">
         {children}
       </body>

@@ -32,6 +32,11 @@ export function BuildDashboardButton({
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          // Some 409s include a redirect (e.g. "finish mapping first").
+          if (data?.redirect && typeof data.redirect === "string") {
+            router.push(data.redirect);
+            return;
+          }
           throw new Error(
             data?.error ??
               "We couldn't build your dashboard from this file. Please try again."

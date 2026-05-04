@@ -4,7 +4,7 @@
 
 **MainStreet Metrics** is a small-business sales analytics product. Small shops — boutiques, cafés, Etsy sellers, home businesses — upload messy sales files from Square, Shopify, Etsy, Excel, or Google Sheets, and get a clean, friendly dashboard that tells them what's actually happening and what to do next.
 
-This repository currently covers **Phase 1 (frontend MVP) + Phase 2 (Supabase backend) + Phase 3 (medallion pipeline)**: a polished, investor-demo-ready UI with real auth, multi-business workspaces, file uploads, CSV/Excel parsing, column mapping, and a real bronze → silver → gold processing pipeline that powers the dashboard with your uploaded data. Rules-based insights are generated automatically.
+This repository currently covers **Phase 1 (frontend MVP) + Phase 2 (Supabase backend) + Phase 3 (medallion pipeline) + Phase 3.5 (verification & hardening)**: a polished, investor-demo-ready UI with real auth, multi-business workspaces, file uploads, CSV/Excel parsing, column mapping, and a real bronze → silver → gold processing pipeline that powers the dashboard with your uploaded data. Rules-based insights are generated automatically. Fonts are self-hosted, the process endpoint is race-safe, and `npm run build` passes cleanly with no network fetch.
 
 ---
 
@@ -30,7 +30,7 @@ Every surface is frontend-only — no backend calls — but structured so Phase 
 - **Recharts** for the sales trend area chart and the channel donut
 - **Framer Motion** for subtle hero entrance animation
 - **lucide-react** icons
-- **Google Fonts** — Inter (body) + Fraunces (display)
+- **Self-hosted fonts** via `@fontsource-variable/inter` + `@fontsource-variable/fraunces` — Inter (body) + Fraunces (display), bundled locally so builds don't fetch Google Fonts at build time
 
 Designed for Phase 2+ integration with **Supabase** (Auth, Postgres, Storage) and optional **FastAPI + Pandas** workers for heavy file processing.
 

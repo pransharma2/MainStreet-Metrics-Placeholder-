@@ -38,7 +38,7 @@ type Rule = {
 
 // Order matters: first match wins.
 const RULES: Rule[] = [
-  { field: "order_id", exact: ["orderid", "orderno", "ordernumber", "order", "ordername", "transactionid"], contains: ["orderid", "ordernum", "txnid"], confidence: "high" },
+  { field: "order_id", exact: ["orderid", "orderno", "ordernumber", "order", "ordername", "transactionid", "ticket", "ticketnumber", "receiptnumber", "receipt"], contains: ["orderid", "ordernum", "txnid", "ticket", "receipt"], confidence: "high" },
   { field: "order_date", exact: ["date", "orderdate", "createdat", "purchasedate", "soldat", "timestamp"], contains: ["date", "createdat", "soldat", "timestamp"], confidence: "high" },
   { field: "customer_email", exact: ["email", "customeremail", "buyeremail", "useremail"], contains: ["email"], confidence: "high" },
   { field: "customer_name", exact: ["customer", "customername", "buyer", "buyername", "name", "fullname"], contains: ["customername", "buyername"], confidence: "medium" },

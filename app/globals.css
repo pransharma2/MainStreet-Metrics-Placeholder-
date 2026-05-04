@@ -4,6 +4,13 @@
 
 @layer base {
   :root {
+    /* Self-hosted fonts registered by @fontsource-variable imports in
+       app/layout.tsx. Keeping these as CSS variables preserves the existing
+       tailwind.config.ts fontFamily tokens. */
+    --font-inter: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+
     --background: 40 33% 99%;
     --foreground: 222 20% 12%;
 

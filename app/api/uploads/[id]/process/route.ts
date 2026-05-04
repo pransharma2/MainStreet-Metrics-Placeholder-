@@ -85,10 +85,21 @@ export async function POST(
   }
 
   // Allow reprocessing from mapped/processed/failed states. Disallow only the
-  // in-between "processing" state to avoid concurrent runs.
+  // in-between "processing" state to avoid concurrent runs, and disallow
+  // pre-mapping states so users always confirm their mapping first.
   if (upload.status === "processing") {
     return NextResponse.json(
       { error: "This file is already being built. Give it a moment." },
+      { status: 409 }
+    );
+  }
+  if (upload.status === "uploaded" || upload.status === "parsed") {
+    return NextResponse.json(
+      {
+        error:
+          "Please finish matching your columns first, then click Build my dashboard.",
+        redirect: `/dashboard/mapping/${uploadId}`,
+      },
       { status: 409 }
     );
   }
@@ -115,11 +126,32 @@ export async function POST(
     }))
   );
 
-  // ---- Mark processing ----
-  await supabase
+  // ---- Mark processing (race-safe, RLS-aware) ----
+  // Conditional update: only transition from mapped/processed/failed. If some
+  // other request already moved this row to 'processing' between our earlier
+  // SELECT and this UPDATE, no row matches and we return a friendly 409. RLS
+  // still applies (business_users membership), so tenant isolation is unchanged.
+  const { data: claimed, error: claimErr } = await supabase
     .from("file_uploads")
     .update({ status: "processing", error_message: null })
-    .eq("id", uploadId);
+    .eq("id", uploadId)
+    .in("status", ["mapped", "processed", "failed"])
+    .select("id")
+    .maybeSingle();
+
+  if (claimErr) {
+    console.error("[process] status claim error:", claimErr);
+    return NextResponse.json(
+      { error: "Something went wrong starting this build. Please try again." },
+      { status: 500 }
+    );
+  }
+  if (!claimed) {
+    return NextResponse.json(
+      { error: "This file is already being built. Give it a moment." },
+      { status: 409 }
+    );
+  }
 
   try {
     // ---- Download the original file ----
