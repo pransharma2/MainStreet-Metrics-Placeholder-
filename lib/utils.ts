@@ -30,3 +30,11 @@ export function formatDelta(value: number) {
   const sign = value > 0 ? "+" : value < 0 ? "" : "";
   return `${sign}${value.toFixed(1)}%`;
 }
+
+export function getInitials(name?: string | null, fallbackEmail?: string | null) {
+  const src = (name ?? fallbackEmail ?? "").trim();
+  if (!src) return "👋";
+  const parts = src.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}

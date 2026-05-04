@@ -54,6 +54,15 @@ export interface FileUploadRow {
   created_at: string;
 }
 
+export interface ActiveSession {
+  user: {
+    id: string;
+    email: string | null;
+    profile: ProfileRow | null;
+  };
+  business: BusinessRow;
+}
+
 export interface DetectedColumnRow {
   id: string;
   file_upload_id: string;

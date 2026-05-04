@@ -14,10 +14,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { useActiveSession } from "@/components/dashboard/dashboard-shell-context";
 import { logoutAction } from "@/app/(auth)/actions";
-import { getInitials } from "@/lib/workspace";
 
 const primary = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },

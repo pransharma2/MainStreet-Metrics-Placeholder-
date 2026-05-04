@@ -1,16 +1,9 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { BusinessRow, ProfileRow } from "@/lib/types/db";
+import type { ActiveSession, BusinessRow, ProfileRow } from "@/lib/types/db";
 
-export interface ActiveSession {
-  user: {
-    id: string;
-    email: string | null;
-    profile: ProfileRow | null;
-  };
-  business: BusinessRow;
-}
+export type { ActiveSession } from "@/lib/types/db";
 
 /**
  * Loads the current authenticated user and their default business.
@@ -61,12 +54,4 @@ export async function requireActiveSession(): Promise<ActiveSession> {
     },
     business,
   };
-}
-
-export function getInitials(name?: string | null, fallbackEmail?: string | null) {
-  const src = (name ?? fallbackEmail ?? "").trim();
-  if (!src) return "👋";
-  const parts = src.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

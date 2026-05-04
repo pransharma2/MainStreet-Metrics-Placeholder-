@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { ActiveSession } from "@/lib/workspace";
+import type { ActiveSession } from "@/lib/types/db";
 
 const Ctx = createContext<ActiveSession | null>(null);
 
