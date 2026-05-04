@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Save,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,8 +61,12 @@ export function MappingTable({
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial);
   const [saving, startSaving] = useTransition();
+  const [building, startBuilding] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [buildStage, setBuildStage] = useState<
+    "idle" | "cleaning" | "building"
+  >("idle");
 
   const stats = useMemo(() => {
     const mapped = rows.filter((r) => r.suggestion !== "Ignore" && !r.ignored);
@@ -71,31 +77,61 @@ export function MappingTable({
     };
   }, [rows]);
 
+  async function saveMappingRequest() {
+    const res = await fetch(`/api/uploads/${uploadId}/mapping`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        columns: rows.map((r) => ({
+          id: r.id,
+          suggestion: r.suggestion,
+          ignored: r.ignored || r.suggestion === "Ignore",
+        })),
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(
+        data?.error ?? "We couldn't save your mapping. Please try again."
+      );
+    }
+  }
+
   function save(next?: () => void) {
     setError(null);
     startSaving(async () => {
       try {
-        const res = await fetch(`/api/uploads/${uploadId}/mapping`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            columns: rows.map((r) => ({
-              id: r.id,
-              suggestion: r.suggestion,
-              ignored: r.ignored || r.suggestion === "Ignore",
-            })),
-          }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(
-            data?.error ?? "We couldn't save your mapping. Please try again."
-          );
-        }
+        await saveMappingRequest();
         setSaved(true);
         if (next) next();
         else router.refresh();
       } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      }
+    });
+  }
+
+  function buildDashboard() {
+    setError(null);
+    setSaved(false);
+    startBuilding(async () => {
+      try {
+        setBuildStage("cleaning");
+        await saveMappingRequest();
+        setBuildStage("building");
+        const res = await fetch(`/api/uploads/${uploadId}/process`, {
+          method: "POST",
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(
+            data?.error ??
+              "We couldn't build your dashboard from this file. Please try again."
+          );
+        }
+        router.push(data?.redirect ?? "/dashboard");
+      } catch (err) {
+        setBuildStage("idle");
         setError(err instanceof Error ? err.message : "Something went wrong.");
       }
     });
@@ -249,28 +285,48 @@ export function MappingTable({
         </table>
       </div>
 
+      {building && (
+        <div className="flex items-start gap-2.5 rounded-2xl border border-brand-200 bg-brand-50/80 px-4 py-3 text-sm text-brand-900">
+          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+          <span>
+            {buildStage === "cleaning"
+              ? "Cleaning your sales file…"
+              : "Building your dashboard…"}
+          </span>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/70 bg-muted/30 p-4">
         <div className="text-xs text-muted-foreground">
           We'll reuse this mapping on future uploads with the same column names —
           no re-mapping needed.
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
             onClick={() => save()}
-            disabled={saving}
+            disabled={saving || building}
           >
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save mapping"}
           </Button>
           <Button
+            variant="secondary"
             onClick={() =>
               save(() => router.push(`/dashboard/data-quality/${uploadId}`))
             }
-            disabled={saving}
+            disabled={saving || building}
           >
-            Save & continue
+            Save & review
             <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button onClick={buildDashboard} disabled={saving || building}>
+            {building ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {building ? "Building…" : "Build my dashboard"}
           </Button>
         </div>
       </div>

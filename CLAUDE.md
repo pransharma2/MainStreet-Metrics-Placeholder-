@@ -26,7 +26,7 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 
 ## 2. Current Project Status
 
-**Phase 1 and Phase 2 are complete. Phase 2 has NOT yet been fully tested locally with a real Supabase project by the user.**
+**Phase 1, Phase 2, and Phase 3 are complete. Phase 3 has not yet been fully end-to-end tested by the user against a live Supabase project.**
 
 ### Phase 1 — Frontend MVP (done)
 - Polished frontend-first MVP shell
@@ -64,6 +64,43 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 - Added file/data quality page based on uploaded columns
 - Added demo dashboard fallback banner ("You're viewing demo data…")
 - Updated README with setup instructions
+
+### Phase 3 — Medallion pipeline (done, not yet end-to-end user-verified)
+- Added new tables (in both `supabase/schema.sql` and `supabase/migrations/0002_phase3_medallion.sql`, idempotent):
+  - `bronze_raw_rows` (raw + mapped JSONB per upload row)
+  - `data_quality_runs`, `data_quality_results`
+  - `orders_silver`, `order_items_silver`, `customers_silver`, `products_silver`
+  - `gold_daily_sales`, `gold_monthly_sales`, `gold_product_performance`, `gold_customer_summary`
+  - `gold_business_insights`
+- Added `processing` to `upload_status` enum (safe `alter type ... add value if not exists`)
+- All new tables are RLS-protected via `is_business_member(business_id)`
+- Added pure processing library under `lib/processing/`:
+  - `parse-values.ts` — `parseDate`, `parseMoney`, `parseQuantity`, `normalizeText`, `normalizeProductName`, `normalizeEmail`, `buildCustomerKey`, `buildProductKey`, `detectDateFormat`, `isFutureDate`
+  - `bronze.ts` — `resolveMapping`, `applyMappingToRow`, `buildBronzeRows`
+  - `validation.ts` — rules engine with friendly messages, critical vs. warning distinction
+  - `silver.ts` — `buildSilver` (detects item-level vs row-level files, groups into orders/items, aggregates customers/products)
+  - `gold.ts` — `buildGold` (daily/monthly/product/customer aggregations with ranks and new/returning split)
+  - `insights.ts` — `buildInsights` (top-product concentration, strongest day, repeat-customer value, high-value product, slow movers, MoM trend, AOV, missing-email warning)
+- Extracted shared file parsing into `lib/parse-file.ts` (used by both upload and process routes)
+- Added `POST /api/uploads/[id]/process` endpoint that:
+  1. Authenticates + RLS-checks upload
+  2. Sets status=`processing`
+  3. Downloads original file from Storage + full parse
+  4. Applies saved column mapping, runs validation
+  5. Writes `data_quality_runs` + `data_quality_results`
+  6. On critical failure: sets status=`failed`, returns friendly error
+  7. Inserts bronze rows (chunked)
+  8. Deletes previous silver for this upload, inserts fresh silver orders/items, upserts customers/products
+  9. Rebuilds full business gold + insights
+  10. Sets status=`processed`, returns `{ redirect: "/dashboard" }`
+- Added `lib/dashboard-data.ts` (server-only) that loads gold rows and maps them into the existing component shapes, with 30-day window and MoM deltas
+- Added `components/dashboard/build-dashboard-button.tsx` (client) — used on the file-check page
+- Updated `components/mapping/mapping-table.tsx` — new "Build my dashboard" primary action + "Save & review" + "Save mapping"
+- Updated `app/dashboard/page.tsx` to read from `loadDashboardData()`; real data when gold exists, demo fallback otherwise (existing visual design preserved)
+- Updated `app/dashboard/data-quality/[uploadId]/page.tsx` to prefer real `data_quality_results` when present; fall back to mapping-based preview
+- Added sample messy files: `sample-data/boutique_sales_messy.csv`, `cafe_sales_messy.csv`, `etsy_shop_sales_messy.csv`
+- Extended `lib/types/db.ts` with row types for every new table + insert-shape types
+- `import "server-only"` preserved on `lib/workspace.ts`, `lib/dashboard-data.ts`, `lib/supabase/server.ts`, `lib/supabase/admin.ts`; no client component imports any of them
 
 ---
 
@@ -249,10 +286,6 @@ User-facing language must be friendly and non-technical. Examples:
 
 These are **explicitly not built** and should not be assumed to exist:
 
-- Full bronze / silver / gold medallion processing
-- Real dashboard metrics from uploaded files
-- Gold tables powering the charts
-- Rules-based business insight generation
 - Stripe payments
 - Real Google OAuth
 - Email reports
@@ -261,51 +294,46 @@ These are **explicitly not built** and should not be assumed to exist:
 - Monthly scheduled refreshes
 - Power BI embedded
 - Full production worker / FastAPI processing layer
+- Workspace switcher UI (multi-business per user)
+- Per-source saved mapping templates (reuse mapping across uploads with the same headers)
+- Incremental gold updates (today: gold is rebuilt from full silver on every process)
+- Product MoM trend in gold_product_performance (placeholder `trend: 0` in dashboard)
 
 ---
 
-## 9. Immediate Next Step Before Phase 3
+## 9. Verification Checklist (Phase 3)
 
-**The next step is NOT Phase 3. It is Phase 2 verification.** Do not start Phase 3 until this checklist passes end-to-end.
+Phase 3 has not yet been end-to-end verified by the user against a live Supabase project. The checklist:
 
-### Local verification checklist
-
-1. Run `pnpm install`
-2. Run `pnpm typecheck`
-3. Run `pnpm build`
-4. Create a Supabase project
-5. Fill `.env.local` from `.env.local.example`
-6. Apply `supabase/schema.sql` in the Supabase SQL editor
-7. Run `pnpm dev`
-8. Sign up as a new user
-9. Confirm default business is created
-10. Confirm demo dashboard banner appears
-11. Upload a small CSV
-12. Confirm the Storage object is created (`uploads/{business_id}/{upload_id}/...`)
-13. Confirm a `file_uploads` row is created
-14. Confirm `detected_columns` rows are created
-15. Confirm the mapping page loads real detected columns
-16. Save the mapping
-17. Confirm upload `status` changes to `mapped`
-18. Confirm the data-quality page works
-19. Sign out
-20. Confirm `/dashboard/*` routes are protected (redirect to `/login`)
+1. `npm install`, `npm run typecheck`, `npm run build`
+2. Create a Supabase project
+3. Apply `supabase/schema.sql` (or `supabase/migrations/0002_phase3_medallion.sql` if Phase 2 was already applied)
+4. Fill `.env.local`
+5. `npm run dev`
+6. Sign up, confirm default business appears
+7. `/dashboard` shows demo data with banner
+8. Upload `sample-data/boutique_sales_messy.csv`
+9. Review detected column mapping
+10. Click **Build my dashboard**
+11. Confirm status transitions: uploaded → parsed → mapped → processing → processed
+12. Confirm rows exist in `bronze_raw_rows`, `data_quality_runs`, `data_quality_results`, `orders_silver`, `order_items_silver`, `customers_silver`, `products_silver`, `gold_daily_sales`, `gold_monthly_sales`, `gold_product_performance`, `gold_customer_summary`, `gold_business_insights`
+13. `/dashboard` shows real values instead of demo data
+14. Banner is gone once real data exists
+15. Sign up as a second user → that user's `/dashboard` shows only demo data; cannot see the first user's rows (RLS test)
+16. Sign out → `/dashboard/*` redirects to `/login`
 
 ---
 
-## 10. Phase 3 Plan Preview
+## 10. Suggested Next Phase (Phase 4)
 
-Phase 3 should begin **only after** the Phase 2 checklist above is verified.
+Phase 3 is shipped. Good candidates for Phase 4 (pick what has the most business value):
 
-Phase 3 should focus on:
-- Bronze raw-row insert (JSONB per upload)
-- Validation table or validation results (`data_quality_runs` or similar)
-- Silver cleaned, normalized tables (orders, line items, customers, products)
-- Gold metric tables (daily revenue, top products, customer segments, channel mix)
-- Real dashboard data sourced from uploaded files
-- Rules-based insight generation (e.g., "Saturdays lead revenue", "10 VIPs drove 32% of sales")
-- Replacing static dashboard values with real gold metrics when available
-- **Keep the demo fallback** when no real gold data exists yet
+- **Saved mapping templates** per source — remember a user's approved mapping and auto-apply on future uploads with matching headers so step 3 becomes a one-click confirmation.
+- **Workspace switcher UI** — surface `business_users` as a dropdown (schema already supports it).
+- **PDF export** — render the current dashboard to a downloadable monthly report.
+- **Email reports** — schedule a weekly "here's your numbers" digest using Supabase scheduled functions + a transactional email provider.
+- **Incremental gold updates** — replace full-business rebuild with per-upload delta for scale.
+- **Google OAuth** — wire the existing "Coming soon" button through Supabase.
 
 Phase 3 should **not** add Stripe, real OAuth, PDF exports, or external API connectors yet.
 
@@ -317,7 +345,7 @@ Strict rules for any future session working on this project:
 
 - **Do not** redesign the app from scratch.
 - **Do not** remove the polished Phase 1 design.
-- **Do not** skip verification before building Phase 3.
+- **Do not** skip verification before moving to the next phase.
 - **Do not** expose `SUPABASE_SERVICE_ROLE_KEY` to the browser. It must only be imported from `lib/supabase/admin.ts`, which has `import "server-only"`.
 - **Do not** remove RLS.
 - **Do not** hardcode Supabase credentials.
@@ -326,17 +354,17 @@ Strict rules for any future session working on this project:
 - **Keep** frontend components reusable and clean.
 - **Keep** business-owner-facing copy friendly and simple.
 - **Keep** technical architecture documented.
-- **Run** `pnpm typecheck` and `pnpm build` after meaningful changes.
+- **Run** `npm run typecheck` and `npm run build` after meaningful changes.
 
 ---
 
 ## 12. Useful Commands
 
 ```bash
-pnpm install
-pnpm dev
-pnpm typecheck
-pnpm build
+npm install
+npm run dev
+npm run typecheck
+npm run build
 
 git status
 git add .

@@ -18,45 +18,64 @@ import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { CustomerInsights } from "@/components/dashboard/customer-insights";
 import { DataQualityCard } from "@/components/dashboard/data-quality-card";
 import { requireActiveSession } from "@/lib/workspace";
-import { createClient } from "@/lib/supabase/server";
+import { loadDashboardData } from "@/lib/dashboard-data";
 import {
-  businessInsights,
-  channelRevenue,
-  customerSegments,
-  dataQualityItems,
-  overviewMetrics,
-  salesTrend,
-  topProducts,
+  businessInsights as demoInsights,
+  channelRevenue as demoChannels,
+  customerSegments as demoSegments,
+  dataQualityItems as demoDqItems,
+  overviewMetrics as demoMetrics,
+  salesTrend as demoSalesTrend,
+  topProducts as demoTopProducts,
 } from "@/lib/sample-data";
 
 export default async function DashboardPage() {
   const session = await requireActiveSession();
-  const supabase = createClient();
+  const data = await loadDashboardData(
+    session.business.id,
+    session.business.currency ?? "USD"
+  );
 
-  // Does the user have any uploads yet? Phase 3 will branch on processed Gold
-  // tables. For Phase 2 we just show the banner whenever there's no file yet.
-  const { data: latestUploads } = await supabase
-    .from("file_uploads")
-    .select("id, filename, source, size_bytes, row_count, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  const latestUpload = latestUploads?.[0];
-  const showDemoBanner = !latestUpload; // no uploads → demo mode
+  const latestUpload = data.latestUpload;
+  const showDemoBanner = !data.hasRealData;
 
   const displayName =
     session.user.profile?.full_name?.split(" ")[0] ??
     session.user.email?.split("@")[0] ??
     "there";
 
+  // Pick real or demo datasets for each section.
+  const overviewMetrics = data.hasRealData ? data.overviewMetrics : demoMetrics;
+  const salesTrend = data.hasRealData ? data.salesTrend : demoSalesTrend;
+  const channels =
+    data.hasRealData && data.channelRevenue && data.channelRevenue.length > 0
+      ? data.channelRevenue
+      : demoChannels;
+  const topProducts =
+    data.hasRealData && data.topProducts.length > 0
+      ? data.topProducts
+      : demoTopProducts;
+  const segments =
+    data.hasRealData && data.customerSegments.length > 0
+      ? data.customerSegments
+      : demoSegments;
+  const insights =
+    data.hasRealData && data.insights.length > 0 ? data.insights : demoInsights;
+  const dqItems =
+    data.hasRealData && data.dataQualityItems && data.dataQualityItems.length > 0
+      ? data.dataQualityItems
+      : demoDqItems;
+
   return (
     <DashboardShell
       title={`Hi ${displayName} — here's how ${session.business.name} is doing.`}
       description={
-        latestUpload
+        data.hasRealData && latestUpload
           ? `Latest upload: ${latestUpload.filename} · ${(
               latestUpload.row_count ?? 0
             ).toLocaleString()} rows · ${latestUpload.source}`
+          : latestUpload
+          ? `Latest upload: ${latestUpload.filename} — finish mapping to see real numbers.`
           : "You're viewing demo data — upload your first sales file to start building your own dashboard."
       }
       actions={
@@ -86,17 +105,23 @@ export default async function DashboardPage() {
                     You're viewing demo data.
                   </div>
                   <p className="mt-1 max-w-xl text-sm text-brand-900/80">
-                    Upload a sales file to start building your own dashboard.
-                    We'll parse your columns, suggest a clean mapping, and let
-                    you review everything before processing.
+                    {latestUpload
+                      ? "Finish mapping your uploaded file and click Build my dashboard to see your real numbers."
+                      : "Upload a sales file to start building your own dashboard. We'll parse your columns, suggest a clean mapping, and let you review everything before processing."}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button asChild>
-                  <Link href="/dashboard/upload">
+                  <Link
+                    href={
+                      latestUpload
+                        ? `/dashboard/mapping/${latestUpload.id}`
+                        : "/dashboard/upload"
+                    }
+                  >
                     <UploadCloud className="h-4 w-4" />
-                    Upload your first file
+                    {latestUpload ? "Finish your dashboard" : "Upload your first file"}
                   </Link>
                 </Button>
               </div>
@@ -104,7 +129,7 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Overview metrics (static demo) */}
+        {/* Overview metrics */}
         <section>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {overviewMetrics.map((m) => (
@@ -119,7 +144,9 @@ export default async function DashboardPage() {
               <div>
                 <CardTitle>Sales trend</CardTitle>
                 <CardDescription>
-                  Revenue over the last 30 days — Saturdays lead the pack.
+                  {data.hasRealData
+                    ? "Revenue over the last 30 days from your uploaded file."
+                    : "Revenue over the last 30 days — Saturdays lead the pack."}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-1 rounded-full border border-border/70 bg-white p-0.5 text-xs">
@@ -142,10 +169,14 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Revenue by channel</CardTitle>
-              <CardDescription>Where your sales are coming from.</CardDescription>
+              <CardDescription>
+                {data.hasRealData && data.channelRevenue
+                  ? "Where your sales are coming from."
+                  : "Where your sales are coming from (demo)."}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <RevenueByChannelChart data={channelRevenue} />
+              <RevenueByChannelChart data={channels} />
             </CardContent>
           </Card>
         </section>
@@ -156,10 +187,12 @@ export default async function DashboardPage() {
               <div>
                 <CardTitle>Top products</CardTitle>
                 <CardDescription>
-                  Your best sellers by revenue, with month-over-month trend.
+                  {data.hasRealData
+                    ? "Your best sellers by revenue."
+                    : "Your best sellers by revenue, with month-over-month trend."}
                 </CardDescription>
               </div>
-              <Badge variant="brand">Demo</Badge>
+              {!data.hasRealData && <Badge variant="brand">Demo</Badge>}
             </CardHeader>
             <CardContent>
               <TopProductsTable products={topProducts} />
@@ -170,11 +203,13 @@ export default async function DashboardPage() {
             <CardHeader>
               <CardTitle>Customer mix</CardTitle>
               <CardDescription>
-                New vs. returning vs. VIP (3+ orders).
+                {data.hasRealData
+                  ? "New vs. repeat vs. inactive."
+                  : "New vs. returning vs. VIP (3+ orders)."}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CustomerInsights segments={customerSegments} />
+              <CustomerInsights segments={segments} />
             </CardContent>
           </Card>
         </section>
@@ -186,8 +221,9 @@ export default async function DashboardPage() {
                 What your data says
               </h2>
               <p className="text-sm text-muted-foreground">
-                Plain-English insights, each with a suggested next step. Wired
-                to your real data in Phase 3.
+                {data.hasRealData
+                  ? "Plain-English insights, each with a suggested next step."
+                  : "Plain-English insights, each with a suggested next step. Upload your file to see real ones."}
               </p>
             </div>
             <Button variant="ghost" size="sm" disabled>
@@ -196,7 +232,7 @@ export default async function DashboardPage() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {businessInsights.map((ins) => (
+            {insights.map((ins) => (
               <InsightCard key={ins.id} insight={ins} />
             ))}
           </div>
@@ -226,7 +262,17 @@ export default async function DashboardPage() {
                         {(latestUpload.row_count ?? 0).toLocaleString()} rows
                       </div>
                     </div>
-                    <Badge variant="success">{latestUpload.status}</Badge>
+                    <Badge
+                      variant={
+                        latestUpload.status === "processed"
+                          ? "success"
+                          : latestUpload.status === "failed"
+                          ? "danger"
+                          : "warning"
+                      }
+                    >
+                      {latestUpload.status}
+                    </Badge>
                   </div>
                 </div>
               ) : (
@@ -245,17 +291,31 @@ export default async function DashboardPage() {
               <div>
                 <CardTitle>File check</CardTitle>
                 <CardDescription>
-                  {latestUpload
+                  {data.hasRealData && data.dataQualityItems
                     ? "We checked your latest file — here's what we found."
+                    : latestUpload
+                    ? "Sample preview of what file checks look like."
                     : "Sample preview of what file checks look like."}
                 </CardDescription>
               </div>
-              <Badge variant={latestUpload ? "success" : "outline"}>
-                {latestUpload ? "Ready to process" : "Demo"}
+              <Badge
+                variant={
+                  data.hasRealData
+                    ? "success"
+                    : latestUpload
+                    ? "warning"
+                    : "outline"
+                }
+              >
+                {data.hasRealData
+                  ? "Processed"
+                  : latestUpload
+                  ? "Ready to process"
+                  : "Demo"}
               </Badge>
             </CardHeader>
             <CardContent>
-              <DataQualityCard items={dataQualityItems} compact />
+              <DataQualityCard items={dqItems} compact />
             </CardContent>
           </Card>
         </section>

@@ -1,0 +1,32 @@
+order_number,order_date,buyer,buyer_email,product_name,sku,category,quantity,item_price,discount,tax,shipping,order_total,channel,refund_amount
+E-3001,2025-02-01,Hannah R,hannah.r@example.com,Hand-Dyed Tote,HDT-01,Bags,1,$42.00,$0.00,$3.36,$5.00,$50.36,Etsy,0
+E-3002,02/03/2025,Nora S,nora.s@example.com,Ceramic Planter Small,CER-PLT-S,Home,2,$28.00,$0.00,$4.48,$6.50,$66.98,Etsy,0
+E-3003,Feb 4 2025,Liam K,,Beeswax Candle Set,BWX-SET-3,Home,1,$36.00,$0.00,$2.88,$4.00,$42.88,Etsy,0
+E-3004,2025-02-05,Olive W,olive.w@example.com,Macrame Wall Hang,MAC-WH-01,Decor,1,$78.00,$5.00,$5.84,$8.00,$86.84,Etsy,0
+E-3005,2025-02-06,Sam T,sam.t@example.com,Hand-Dyed Tote,HDT-02,Bags,1,$42.00,$0.00,$3.36,$5.00,$50.36,Etsy,0
+E-3006,2025-02-08,Priya M,priya.m@example.com,Ceramic Planter Large,CER-PLT-L,Home,1,$48.00,$0.00,$3.84,$6.50,$58.34,Etsy,0
+E-3007,2025-02-09,,,Linen Tea Towel,LIN-TTW-01,Home,3,$18.00,$0.00,$4.32,$4.50,$62.82,Etsy,0
+E-3008,02-10-2025,Kai B,kai.b@example.com,Beeswax Candle Set,BWX-SET-3,Home,1,$36.00,$0.00,$2.88,$4.00,$42.88,Etsy,0
+E-3009,2025-02-12,Hannah R,hannah.r@example.com,Macrame Wall Hang,MAC-WH-02,Decor,1,$78.00,$0.00,$6.24,$8.00,$92.24,Etsy,0
+E-3010,2025-02-14,Eli V,eli.v@example.com,Hand-Dyed Tote,HDT-03,Bags,2,$42.00,$4.00,$6.40,$5.00,$95.40,Etsy,0
+E-3011,February 15, 2025,Gray P,gray.p@example.com,Ceramic Planter Small,CER-PLT-S,Home,1,$28.00,$0.00,$2.24,$6.50,$36.74,Etsy,0
+E-3012,2025-02-17,Nora S,nora.s@example.com,Linen Tea Towel,LIN-TTW-02,Home,2,$18.00,$0.00,$2.88,$4.50,$43.38,Etsy,0
+E-3013,2025-02-18,Liam K,liam.k@example.com,Beeswax Candle Set,BWX-SET-6,Home,1,$62.00,$0.00,$4.96,$4.00,$70.96,Etsy,0
+E-3014,2/19/2025,Sam T,sam.t@example.com,Macrame Wall Hang,MAC-WH-01,Decor,1,$78.00,$0.00,$6.24,$8.00,$92.24,Etsy,0
+E-3015,2025-02-20,Priya M,priya.m@example.com,Hand-Dyed Tote,HDT-01,Bags,1,$42.00,$0.00,$3.36,$5.00,$50.36,Etsy,0
+E-3016,2025-02-21,Alex D,alex.d@example.com,Ceramic Planter Large,CER-PLT-L,Home,1,$48.00,$0.00,$3.84,$6.50,$58.34,Etsy,0
+E-3016-R,2025-02-25,Alex D,alex.d@example.com,Ceramic Planter Large,CER-PLT-L,Home,-1,$48.00,$0.00,$0.00,$0.00,($58.34),Etsy,58.34
+E-3017,2025-02-22,Olive W,olive.w@example.com,Beeswax Candle Set,BWX-SET-3,Home,1,$36.00,$0.00,$2.88,$4.00,$42.88,Etsy,0
+E-3018,2025-02-23,Hannah R,hannah.r@example.com,Linen Tea Towel,LIN-TTW-01,Home,2,$18.00,$0.00,$2.88,$4.50,$43.38,Etsy,0
+E-3019,2025-02-24,Kai B,kai.b@example.com,Hand-Dyed Tote,HDT-02,Bags,1,$42.00,$0.00,$3.36,$5.00,$50.36,Etsy,0
+E-3020,2025-02-25,Mia J,mia.j@example.com,Ceramic Planter Small,CER-PLT-S,Home,1,$28.00,$0.00,$2.24,$6.50,$36.74,Etsy,0
+E-3021,2025-02-26,Priya M,priya.m@example.com,Macrame Wall Hang,MAC-WH-02,Decor,1,$78.00,$8.00,$5.60,$8.00,$83.60,Etsy,0
+E-3022,2025-02-27,Nora S,nora.s@example.com,Hand-Dyed Tote,HDT-03,Bags,1,$42.00,$0.00,$3.36,$5.00,$50.36,Etsy,0
+E-3023,3/1/2025,Hannah R,hannah.r@example.com,Beeswax Candle Set,BWX-SET-6,Home,1,$62.00,$0.00,$4.96,$4.00,$70.96,Etsy,0
+E-3024,2025-03-02,Eli V,eli.v@example.com,Ceramic Planter Small,CER-PLT-S,Home,2,$28.00,$0.00,$4.48,$6.50,$66.98,Etsy,0
+E-3025,2025-03-03,,,Linen Tea Towel,LIN-TTW-02,Home,3,$18.00,$0.00,$4.32,$4.50,$62.82,Etsy,0
+E-3026,2025-03-05,Sam T,sam.t@example.com,Hand-Dyed Tote,HDT-01,Bags,1,$42.00,$5.00,$2.96,$5.00,$44.96,Etsy,0
+E-3027,2025-03-07,Olive W,olive.w@example.com,Macrame Wall Hang,MAC-WH-01,Decor,1,$78.00,$0.00,$6.24,$8.00,$92.24,Etsy,0
+E-3028,2025-03-09,Priya M,priya.m@example.com,Beeswax Candle Set,BWX-SET-3,Home,1,$36.00,$0.00,$2.88,$4.00,$42.88,Etsy,0
+E-3029,2025-03-11,Alex D,alex.d@example.com,Hand-Dyed Tote,HDT-03,Bags,2,$42.00,$0.00,$6.72,$5.00,$95.72,Etsy,0
+E-3030,2025-03-14,Kai B,kai.b@example.com,Ceramic Planter Large,CER-PLT-L,Home,1,$48.00,$0.00,$3.84,$6.50,$58.34,Etsy,0

@@ -4,7 +4,7 @@
 
 **MainStreet Metrics** is a small-business sales analytics product. Small shops — boutiques, cafés, Etsy sellers, home businesses — upload messy sales files from Square, Shopify, Etsy, Excel, or Google Sheets, and get a clean, friendly dashboard that tells them what's actually happening and what to do next.
 
-This repository currently covers **Phase 1 (frontend MVP) + Phase 2 (Supabase backend)**: a polished, investor-demo-ready UI with real auth, multi-business workspaces, file uploads, CSV/Excel parsing, and column mapping — all wired to Supabase (Auth + Postgres + Storage). The medallion transforms (bronze → silver → gold) and rules-based insights are planned for Phase 3+.
+This repository currently covers **Phase 1 (frontend MVP) + Phase 2 (Supabase backend) + Phase 3 (medallion pipeline)**: a polished, investor-demo-ready UI with real auth, multi-business workspaces, file uploads, CSV/Excel parsing, column mapping, and a real bronze → silver → gold processing pipeline that powers the dashboard with your uploaded data. Rules-based insights are generated automatically.
 
 ---
 
@@ -38,13 +38,13 @@ Designed for Phase 2+ integration with **Supabase** (Auth, Postgres, Storage) an
 
 ## Local setup
 
-Requirements: Node 18.17+, [pnpm](https://pnpm.io/), and a free [Supabase](https://supabase.com) project.
+Requirements: Node 18.17+, npm (bundled with Node), and a free [Supabase](https://supabase.com) project.
 
 ```bash
 cd mainstreet-metrics
-pnpm install
+npm install
 cp .env.local.example .env.local    # then fill in your Supabase keys
-pnpm dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -75,6 +75,10 @@ Open the **SQL editor** in Supabase and paste the contents of [`supabase/schema.
 - Security-definer helpers `is_business_member()` and `can_access_upload()`
 - Row-Level Security policies on every table
 - A private `uploads` storage bucket with per-business folder policies
+- **Phase 3 tables**: `bronze_raw_rows`, `data_quality_runs`, `data_quality_results`, `orders_silver`, `order_items_silver`, `customers_silver`, `products_silver`, `gold_daily_sales`, `gold_monthly_sales`, `gold_product_performance`, `gold_customer_summary`, `gold_business_insights` — all RLS-protected and tenant-isolated.
+
+If you applied Phase 2 previously and only want the Phase 3 additions, run
+[`supabase/migrations/0002_phase3_medallion.sql`](./supabase/migrations/0002_phase3_medallion.sql) instead — it is idempotent (`create table if not exists`).
 
 ### 4. (Optional) Configure email confirmations
 
@@ -83,17 +87,17 @@ In **Authentication → Providers → Email**, you can disable "Confirm email" d
 ### 5. Run it
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 Visit `/signup`, create an account, and you'll be dropped into your new workspace. Upload a CSV from `/dashboard/upload` to see the full parse → detect → map flow end-to-end.
 
 Scripts:
-- `pnpm dev` — Next dev server
-- `pnpm build` — Production build
-- `pnpm start` — Production server
-- `pnpm lint` — ESLint
-- `pnpm typecheck` — TypeScript check (no emit)
+- `npm run dev` — Next dev server
+- `npm run build` — Production build
+- `npm start` — Production server
+- `npm run lint` — ESLint
+- `npm run typecheck` — TypeScript check (no emit)
 
 ### How auth works
 
@@ -109,6 +113,43 @@ Scripts:
 3. `PATCH /api/uploads/{id}/mapping` saves the final mapping and flips the upload status to `mapped`.
 
 All tables are business-scoped via RLS; the service role client is only used for provisioning during signup.
+
+### How processing works (Phase 3)
+
+Once a file's mapping is saved, click **Build my dashboard** (on the mapping page or the file-check page). The `POST /api/uploads/{id}/process` route:
+
+1. Re-authenticates and re-checks RLS access on the upload.
+2. Sets `file_uploads.status = 'processing'`.
+3. Downloads the original file from Supabase Storage and parses every row.
+4. Applies the saved `detected_columns` mapping → **bronze** (`bronze_raw_rows`, storing both `raw_data` and `mapped_data`).
+5. Runs rules-based **validation** and writes `data_quality_runs` + `data_quality_results` with friendly messages. Critical issues (no rows, no usable dates, no sales amounts, missing essential mappings) stop the run and mark the upload `failed` with an explanation; everything else is a warning that lets processing continue.
+6. Builds **silver** tables: `orders_silver`, `order_items_silver`, `customers_silver` (upsert by `business_id, customer_key`), `products_silver` (upsert by `business_id, product_key`).
+7. Rebuilds **gold** tables for the whole business from every silver row: `gold_daily_sales`, `gold_monthly_sales`, `gold_product_performance`, `gold_customer_summary`.
+8. Generates deterministic **insights** into `gold_business_insights` (top-product concentration, strongest sales day, repeat-customer value, slow-moving products, MoM trend, AOV, missing-data warnings, etc.).
+9. Sets `file_uploads.status = 'processed'` and redirects to `/dashboard`.
+
+Reprocessing the same file is safe: bronze, silver (for that upload), gold, and insights are rebuilt each time.
+
+### How the dashboard picks real vs. demo data
+
+`lib/dashboard-data.ts` loads gold rows for the active business. If any exist, the dashboard renders real numbers (overview metrics, sales trend, revenue by channel, top products, customer mix, insights, file check). If not, the polished Willow & Sage demo is shown with the "viewing demo data" banner so new users always see a beautiful page.
+
+### Test walkthrough (upload → mapping → processing → dashboard)
+
+1. Sign up, land in `/dashboard`.
+2. Click **Uploads** → drag `sample-data/boutique_sales_messy.csv`.
+3. Review the auto-detected column mapping on `/dashboard/mapping/{id}`.
+4. Click **Build my dashboard**.
+5. You should land on `/dashboard` with real numbers pulled from the sample file.
+6. Upload another sample file — the dashboard merges all processed uploads for your workspace and refreshes every metric.
+7. Sign out and sign up a second account → `/dashboard` shows demo data and cannot see the first user's rows.
+
+### Troubleshooting
+
+- **"We couldn't find any rows with data"** — your CSV is empty or the header row is malformed. Re-export from your store.
+- **"We couldn't read any dates"** — your order date column is mapped to something else or contains non-date text. Edit the mapping on `/dashboard/mapping/{id}` and try again.
+- **"We couldn't find any sales amounts"** — map your total column to `total_amount`, or map both `unit_price` and `quantity`.
+- **Still seeing demo data after Build my dashboard?** Check `file_uploads.status`. If it's `failed`, hover the badge on `/dashboard` or visit the File check page to see the friendly reason.
 
 ### Demo-data fallback
 
@@ -182,20 +223,23 @@ Motion:
 
 ## What's intentionally NOT built yet
 
-Shipped in Phase 1 + Phase 2:
+Shipped in Phase 1 + Phase 2 + Phase 3:
 - ✅ Supabase Auth (email/password) with friendly error messages
 - ✅ Multi-business workspaces with RLS
 - ✅ File upload + CSV/Excel parsing + column detection
 - ✅ Column mapping UI persisted to Postgres
+- ✅ Bronze → silver → gold medallion pipeline
+- ✅ Rules-based data validation + friendly messages
+- ✅ Rules-based business insights generated from gold
+- ✅ Dashboard reads real gold data when available; demo fallback otherwise
 
 Still deferred (planned):
 - Google OAuth (stub today — "Coming soon" badge)
-- Bronze / silver / gold medallion transforms
-- Rules-based insight generation from real data
 - Monthly refresh + email reports + PDF export
 - Stripe billing
 - API connectors (Shopify, Square, Etsy)
 - Power BI embed
+- Workspace switcher UI (multi-business per user)
 
 ---
 
@@ -207,7 +251,9 @@ Still deferred (planned):
 
 **Phase 2.5 — Google OAuth:** real social login wired through Supabase.
 
-**Phase 3 — Pipeline:** bronze insert (JSONB), validation rules + `data_quality_runs`, silver normalization, gold aggregations, rules-based insights, per-source saved mapping templates.
+**Phase 3 — Pipeline (DONE):** bronze insert (JSONB), validation rules + `data_quality_runs`/`data_quality_results`, silver normalization (orders / items / customers / products), gold aggregations (daily / monthly / product / customer), rules-based insights, dashboard real-data loader with demo fallback.
+
+**Phase 4 — Polish & delivery:** saved per-source mapping templates, monthly refresh scheduler, PDF export, email reports.
 
 **Phase 6 — Polish:** real demo business seed, monthly refresh, PDF export, email reports.
 

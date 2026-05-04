@@ -1,254 +1,11 @@
 -- =============================================================================
--- MainStreet Metrics — Phase 2 schema + RLS
+-- MainStreet Metrics — Phase 3 medallion schema (bronze / silver / gold)
 --
--- Apply this in the Supabase SQL editor AFTER creating your project.
+-- Apply this AFTER the Phase 2 schema (supabase/schema.sql).
 -- Safe to re-run: everything uses `if not exists` or `create or replace`.
 -- =============================================================================
 
--- Extensions ------------------------------------------------------------------
-create extension if not exists "pgcrypto";
-
--- =============================================================================
--- profiles  (1:1 with auth.users)
--- =============================================================================
-create table if not exists public.profiles (
-  id          uuid primary key references auth.users(id) on delete cascade,
-  full_name   text,
-  avatar_url  text,
-  created_at  timestamptz not null default now()
-);
-
-alter table public.profiles enable row level security;
-
-drop policy if exists "profiles_select_self" on public.profiles;
-create policy "profiles_select_self"
-  on public.profiles for select
-  using (id = auth.uid());
-
-drop policy if exists "profiles_update_self" on public.profiles;
-create policy "profiles_update_self"
-  on public.profiles for update
-  using (id = auth.uid())
-  with check (id = auth.uid());
-
--- Auto-create a profile row on signup.
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.profiles (id, full_name)
-  values (new.id, coalesce(new.raw_user_meta_data ->> 'full_name', ''))
-  on conflict (id) do nothing;
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- =============================================================================
--- businesses  (a tenant / workspace)
--- =============================================================================
-create table if not exists public.businesses (
-  id          uuid primary key default gen_random_uuid(),
-  name        text not null,
-  industry    text,
-  currency    text not null default 'USD',
-  timezone    text not null default 'America/Chicago',
-  tagline     text,
-  created_by  uuid not null references auth.users(id) on delete restrict,
-  created_at  timestamptz not null default now()
-);
-
-alter table public.businesses enable row level security;
-
--- =============================================================================
--- business_users  (membership)
--- =============================================================================
-create type business_role as enum ('owner', 'admin', 'member');
-
-create table if not exists public.business_users (
-  business_id uuid not null references public.businesses(id) on delete cascade,
-  user_id     uuid not null references auth.users(id) on delete cascade,
-  role        business_role not null default 'owner',
-  created_at  timestamptz not null default now(),
-  primary key (business_id, user_id)
-);
-
-alter table public.business_users enable row level security;
-
--- Helper: is the current user a member of a given business?
-create or replace function public.is_business_member(b_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.business_users
-     where business_id = b_id
-       and user_id = auth.uid()
-  );
-$$;
-
--- Policies for businesses
-drop policy if exists "businesses_select_members" on public.businesses;
-create policy "businesses_select_members"
-  on public.businesses for select
-  using (public.is_business_member(id));
-
-drop policy if exists "businesses_update_admins" on public.businesses;
-create policy "businesses_update_admins"
-  on public.businesses for update
-  using (
-    exists (
-      select 1 from public.business_users bu
-       where bu.business_id = businesses.id
-         and bu.user_id = auth.uid()
-         and bu.role in ('owner', 'admin')
-    )
-  );
-
--- Insert is handled via service role (auto-provision on signup).
-
--- Policies for business_users
-drop policy if exists "business_users_select_self_or_peer" on public.business_users;
-create policy "business_users_select_self_or_peer"
-  on public.business_users for select
-  using (
-    user_id = auth.uid()
-    or public.is_business_member(business_id)
-  );
-
--- =============================================================================
--- file_uploads
--- =============================================================================
-create type upload_status as enum (
-  'uploaded', 'parsed', 'mapped', 'processed', 'failed'
-);
-
-create type upload_source as enum ('Shopify', 'Square', 'Etsy', 'CSV', 'Excel');
-
-create table if not exists public.file_uploads (
-  id             uuid primary key default gen_random_uuid(),
-  business_id    uuid not null references public.businesses(id) on delete cascade,
-  uploader_id    uuid not null references auth.users(id) on delete set null,
-  filename       text not null,
-  source         upload_source not null default 'CSV',
-  size_bytes     bigint not null default 0,
-  row_count      integer,
-  storage_path   text not null,
-  status         upload_status not null default 'uploaded',
-  error_message  text,
-  preview_rows   jsonb,
-  created_at     timestamptz not null default now()
-);
-
-create index if not exists file_uploads_business_idx
-  on public.file_uploads (business_id, created_at desc);
-
-alter table public.file_uploads enable row level security;
-
-drop policy if exists "file_uploads_select_members" on public.file_uploads;
-create policy "file_uploads_select_members"
-  on public.file_uploads for select
-  using (public.is_business_member(business_id));
-
-drop policy if exists "file_uploads_insert_members" on public.file_uploads;
-create policy "file_uploads_insert_members"
-  on public.file_uploads for insert
-  with check (public.is_business_member(business_id));
-
-drop policy if exists "file_uploads_update_members" on public.file_uploads;
-create policy "file_uploads_update_members"
-  on public.file_uploads for update
-  using (public.is_business_member(business_id));
-
--- =============================================================================
--- detected_columns
--- =============================================================================
-create type confidence_level as enum ('high', 'medium', 'low');
-
-create table if not exists public.detected_columns (
-  id              uuid primary key default gen_random_uuid(),
-  file_upload_id  uuid not null references public.file_uploads(id) on delete cascade,
-  original        text not null,
-  sample          text,
-  suggestion      text not null,
-  confidence      confidence_level not null default 'medium',
-  ignored         boolean not null default false,
-  position        integer not null default 0
-);
-
-create index if not exists detected_columns_upload_idx
-  on public.detected_columns (file_upload_id, position);
-
-alter table public.detected_columns enable row level security;
-
--- Helper: is the current user a member of the business that owns a given upload?
-create or replace function public.can_access_upload(u_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-      from public.file_uploads fu
-      join public.business_users bu on bu.business_id = fu.business_id
-     where fu.id = u_id
-       and bu.user_id = auth.uid()
-  );
-$$;
-
-drop policy if exists "detected_columns_select" on public.detected_columns;
-create policy "detected_columns_select"
-  on public.detected_columns for select
-  using (public.can_access_upload(file_upload_id));
-
-drop policy if exists "detected_columns_cud" on public.detected_columns;
-create policy "detected_columns_cud"
-  on public.detected_columns for all
-  using (public.can_access_upload(file_upload_id))
-  with check (public.can_access_upload(file_upload_id));
-
--- =============================================================================
--- Storage bucket for uploads
--- =============================================================================
--- Create a private bucket named 'uploads' (done manually in the Supabase UI, or:)
-insert into storage.buckets (id, name, public)
-  values ('uploads', 'uploads', false)
-  on conflict (id) do nothing;
-
--- Policy: only members of the business can read/write files under `<business_id>/...`
-drop policy if exists "uploads_rw_members" on storage.objects;
-create policy "uploads_rw_members"
-  on storage.objects for all
-  using (
-    bucket_id = 'uploads'
-    and public.is_business_member((storage.foldername(name))[1]::uuid)
-  )
-  with check (
-    bucket_id = 'uploads'
-    and public.is_business_member((storage.foldername(name))[1]::uuid)
-  );
-
--- =============================================================================
--- =============================================================================
--- Phase 3 — Medallion pipeline (bronze / silver / gold) + insights
--- This section mirrors supabase/migrations/0002_phase3_medallion.sql.
--- Safe to re-run.
--- =============================================================================
--- =============================================================================
-
--- Add 'processing' to upload_status enum if not already present.
+-- Add 'processing' to upload_status enum if not already present ----------------
 do $$
 begin
   if not exists (
@@ -260,7 +17,9 @@ begin
   end if;
 end$$;
 
--- BRONZE ----------------------------------------------------------------------
+-- =============================================================================
+-- BRONZE: raw rows exactly as uploaded (+ mapped view of the same row)
+-- =============================================================================
 create table if not exists public.bronze_raw_rows (
   id              uuid primary key default gen_random_uuid(),
   business_id     uuid not null references public.businesses(id) on delete cascade,
@@ -271,18 +30,23 @@ create table if not exists public.bronze_raw_rows (
   mapped_data     jsonb,
   created_at      timestamptz not null default now()
 );
-create index if not exists bronze_raw_rows_business_idx on public.bronze_raw_rows (business_id);
-create index if not exists bronze_raw_rows_upload_idx   on public.bronze_raw_rows (file_upload_id);
+
+create index if not exists bronze_raw_rows_business_idx   on public.bronze_raw_rows (business_id);
+create index if not exists bronze_raw_rows_upload_idx     on public.bronze_raw_rows (file_upload_id);
+
 alter table public.bronze_raw_rows enable row level security;
-drop policy if exists "bronze_raw_rows_select" on public.bronze_raw_rows;
-drop policy if exists "bronze_raw_rows_cud"    on public.bronze_raw_rows;
+
+drop policy if exists "bronze_raw_rows_select"  on public.bronze_raw_rows;
+drop policy if exists "bronze_raw_rows_cud"     on public.bronze_raw_rows;
 create policy "bronze_raw_rows_select" on public.bronze_raw_rows for select
   using (public.is_business_member(business_id));
 create policy "bronze_raw_rows_cud" on public.bronze_raw_rows for all
   using (public.is_business_member(business_id))
   with check (public.is_business_member(business_id));
 
--- DATA QUALITY ----------------------------------------------------------------
+-- =============================================================================
+-- DATA QUALITY
+-- =============================================================================
 create table if not exists public.data_quality_runs (
   id              uuid primary key default gen_random_uuid(),
   business_id     uuid not null references public.businesses(id) on delete cascade,
@@ -293,9 +57,12 @@ create table if not exists public.data_quality_runs (
   error_count     integer not null default 0,
   created_at      timestamptz not null default now()
 );
+
 create index if not exists dq_runs_business_idx on public.data_quality_runs (business_id);
 create index if not exists dq_runs_upload_idx   on public.data_quality_runs (file_upload_id, created_at desc);
+
 alter table public.data_quality_runs enable row level security;
+
 drop policy if exists "dq_runs_select" on public.data_quality_runs;
 drop policy if exists "dq_runs_cud"    on public.data_quality_runs;
 create policy "dq_runs_select" on public.data_quality_runs for select
@@ -316,10 +83,13 @@ create table if not exists public.data_quality_results (
   suggested_fix   text,
   created_at      timestamptz not null default now()
 );
+
 create index if not exists dq_results_business_idx on public.data_quality_results (business_id);
 create index if not exists dq_results_upload_idx   on public.data_quality_results (file_upload_id);
 create index if not exists dq_results_run_idx      on public.data_quality_results (run_id);
+
 alter table public.data_quality_results enable row level security;
+
 drop policy if exists "dq_results_select" on public.data_quality_results;
 drop policy if exists "dq_results_cud"    on public.data_quality_results;
 create policy "dq_results_select" on public.data_quality_results for select
@@ -328,7 +98,9 @@ create policy "dq_results_cud" on public.data_quality_results for all
   using (public.is_business_member(business_id))
   with check (public.is_business_member(business_id));
 
--- SILVER ----------------------------------------------------------------------
+-- =============================================================================
+-- SILVER
+-- =============================================================================
 create table if not exists public.orders_silver (
   id                uuid primary key default gen_random_uuid(),
   business_id       uuid not null references public.businesses(id) on delete cascade,
@@ -349,11 +121,14 @@ create table if not exists public.orders_silver (
   currency          text,
   created_at        timestamptz not null default now()
 );
+
 create index if not exists orders_silver_business_idx  on public.orders_silver (business_id);
 create index if not exists orders_silver_upload_idx    on public.orders_silver (file_upload_id);
 create index if not exists orders_silver_date_idx      on public.orders_silver (business_id, order_date);
 create index if not exists orders_silver_customer_idx  on public.orders_silver (business_id, customer_key);
+
 alter table public.orders_silver enable row level security;
+
 drop policy if exists "orders_silver_select" on public.orders_silver;
 drop policy if exists "orders_silver_cud"    on public.orders_silver;
 create policy "orders_silver_select" on public.orders_silver for select
@@ -380,11 +155,14 @@ create table if not exists public.order_items_silver (
   net_item_amount     numeric not null default 0,
   created_at          timestamptz not null default now()
 );
+
 create index if not exists order_items_silver_business_idx on public.order_items_silver (business_id);
 create index if not exists order_items_silver_upload_idx   on public.order_items_silver (file_upload_id);
 create index if not exists order_items_silver_order_idx    on public.order_items_silver (order_id);
 create index if not exists order_items_silver_product_idx  on public.order_items_silver (business_id, product_key);
+
 alter table public.order_items_silver enable row level security;
+
 drop policy if exists "order_items_silver_select" on public.order_items_silver;
 drop policy if exists "order_items_silver_cud"    on public.order_items_silver;
 create policy "order_items_silver_select" on public.order_items_silver for select
@@ -407,9 +185,12 @@ create table if not exists public.customers_silver (
   updated_at        timestamptz not null default now(),
   unique (business_id, customer_key)
 );
+
 create index if not exists customers_silver_business_idx on public.customers_silver (business_id);
 create index if not exists customers_silver_key_idx      on public.customers_silver (business_id, customer_key);
+
 alter table public.customers_silver enable row level security;
+
 drop policy if exists "customers_silver_select" on public.customers_silver;
 drop policy if exists "customers_silver_cud"    on public.customers_silver;
 create policy "customers_silver_select" on public.customers_silver for select
@@ -434,9 +215,12 @@ create table if not exists public.products_silver (
   updated_at                timestamptz not null default now(),
   unique (business_id, product_key)
 );
+
 create index if not exists products_silver_business_idx on public.products_silver (business_id);
 create index if not exists products_silver_key_idx      on public.products_silver (business_id, product_key);
+
 alter table public.products_silver enable row level security;
+
 drop policy if exists "products_silver_select" on public.products_silver;
 drop policy if exists "products_silver_cud"    on public.products_silver;
 create policy "products_silver_select" on public.products_silver for select
@@ -445,7 +229,9 @@ create policy "products_silver_cud" on public.products_silver for all
   using (public.is_business_member(business_id))
   with check (public.is_business_member(business_id));
 
--- GOLD ------------------------------------------------------------------------
+-- =============================================================================
+-- GOLD
+-- =============================================================================
 create table if not exists public.gold_daily_sales (
   id                    uuid primary key default gen_random_uuid(),
   business_id           uuid not null references public.businesses(id) on delete cascade,
@@ -460,9 +246,12 @@ create table if not exists public.gold_daily_sales (
   created_at            timestamptz not null default now(),
   unique (business_id, sales_date)
 );
+
 create index if not exists gold_daily_sales_business_idx on public.gold_daily_sales (business_id);
 create index if not exists gold_daily_sales_date_idx     on public.gold_daily_sales (business_id, sales_date);
+
 alter table public.gold_daily_sales enable row level security;
+
 drop policy if exists "gold_daily_sales_select" on public.gold_daily_sales;
 drop policy if exists "gold_daily_sales_cud"    on public.gold_daily_sales;
 create policy "gold_daily_sales_select" on public.gold_daily_sales for select
@@ -484,9 +273,12 @@ create table if not exists public.gold_monthly_sales (
   created_at             timestamptz not null default now(),
   unique (business_id, month_start)
 );
+
 create index if not exists gold_monthly_sales_business_idx on public.gold_monthly_sales (business_id);
 create index if not exists gold_monthly_sales_month_idx    on public.gold_monthly_sales (business_id, month_start);
+
 alter table public.gold_monthly_sales enable row level security;
+
 drop policy if exists "gold_monthly_sales_select" on public.gold_monthly_sales;
 drop policy if exists "gold_monthly_sales_cud"    on public.gold_monthly_sales;
 create policy "gold_monthly_sales_select" on public.gold_monthly_sales for select
@@ -512,9 +304,12 @@ create table if not exists public.gold_product_performance (
   quantity_rank        integer,
   created_at           timestamptz not null default now()
 );
+
 create index if not exists gold_product_perf_business_idx on public.gold_product_performance (business_id);
 create index if not exists gold_product_perf_key_idx      on public.gold_product_performance (business_id, product_key);
+
 alter table public.gold_product_performance enable row level security;
+
 drop policy if exists "gold_product_perf_select" on public.gold_product_performance;
 drop policy if exists "gold_product_perf_cud"    on public.gold_product_performance;
 create policy "gold_product_perf_select" on public.gold_product_performance for select
@@ -537,9 +332,12 @@ create table if not exists public.gold_customer_summary (
   customer_type        text,
   created_at           timestamptz not null default now()
 );
+
 create index if not exists gold_customer_summary_business_idx on public.gold_customer_summary (business_id);
 create index if not exists gold_customer_summary_key_idx      on public.gold_customer_summary (business_id, customer_key);
+
 alter table public.gold_customer_summary enable row level security;
+
 drop policy if exists "gold_customer_summary_select" on public.gold_customer_summary;
 drop policy if exists "gold_customer_summary_cud"    on public.gold_customer_summary;
 create policy "gold_customer_summary_select" on public.gold_customer_summary for select
@@ -562,9 +360,12 @@ create table if not exists public.gold_business_insights (
   recommended_action   text,
   created_at           timestamptz not null default now()
 );
+
 create index if not exists gold_business_insights_business_idx on public.gold_business_insights (business_id);
 create index if not exists gold_business_insights_upload_idx   on public.gold_business_insights (file_upload_id);
+
 alter table public.gold_business_insights enable row level security;
+
 drop policy if exists "gold_business_insights_select" on public.gold_business_insights;
 drop policy if exists "gold_business_insights_cud"    on public.gold_business_insights;
 create policy "gold_business_insights_select" on public.gold_business_insights for select

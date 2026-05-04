@@ -2,14 +2,20 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DataQualityCard } from "@/components/dashboard/data-quality-card";
+import { BuildDashboardButton } from "@/components/dashboard/build-dashboard-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import type { DataQualityItem } from "@/lib/sample-data";
-import type { DetectedColumnRow, FileUploadRow } from "@/lib/types/db";
+import type {
+  DataQualityResultRow,
+  DataQualityRunRow,
+  DetectedColumnRow,
+  FileUploadRow,
+} from "@/lib/types/db";
 
-function buildDqItems(
+function buildDqItemsFromMapping(
   upload: FileUploadRow,
   columns: DetectedColumnRow[]
 ): DataQualityItem[] {
@@ -65,6 +71,20 @@ function buildDqItems(
   return items;
 }
 
+function buildDqItemsFromRun(results: DataQualityResultRow[]): DataQualityItem[] {
+  return results.map((r) => ({
+    id: r.id,
+    severity:
+      r.severity === "error"
+        ? "error"
+        : r.severity === "warning"
+        ? "warning"
+        : "info",
+    title: r.rule_name.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
+    body: r.suggested_fix ? `${r.message} ${r.suggested_fix}` : r.message,
+  }));
+}
+
 export default async function DataQualityForUploadPage({
   params,
 }: {
@@ -79,16 +99,49 @@ export default async function DataQualityForUploadPage({
 
   if (!upload) notFound();
 
-  const { data: cols } = await supabase
-    .from("detected_columns")
-    .select("*")
-    .eq("file_upload_id", upload.id);
+  const [{ data: cols }, { data: latestRun }] = await Promise.all([
+    supabase.from("detected_columns").select("*").eq("file_upload_id", upload.id),
+    supabase
+      .from("data_quality_runs")
+      .select("*")
+      .eq("file_upload_id", upload.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<DataQualityRunRow>(),
+  ]);
 
-  const items = buildDqItems(upload, (cols ?? []) as DetectedColumnRow[]);
+  let items: DataQualityItem[];
+  let runResults: DataQualityResultRow[] = [];
+  if (latestRun) {
+    const { data: results } = await supabase
+      .from("data_quality_results")
+      .select("*")
+      .eq("run_id", latestRun.id)
+      .order("severity", { ascending: false });
+    runResults = (results ?? []) as DataQualityResultRow[];
+    items = runResults.length
+      ? buildDqItemsFromRun(runResults)
+      : buildDqItemsFromMapping(upload, (cols ?? []) as DetectedColumnRow[]);
+  } else {
+    items = buildDqItemsFromMapping(upload, (cols ?? []) as DetectedColumnRow[]);
+  }
+
   const counts = items.reduce(
     (acc, i) => ({ ...acc, [i.severity]: (acc[i.severity] ?? 0) + 1 }),
     {} as Record<string, number>
   );
+
+  const alreadyProcessed = upload.status === "processed";
+  const headline = alreadyProcessed
+    ? "Your dashboard is up to date."
+    : latestRun?.status === "failed"
+    ? "We need a couple of fixes first."
+    : "Your file looks good.";
+  const subhead = alreadyProcessed
+    ? "Visit your dashboard to see the latest numbers, or re-build if you've updated the file."
+    : latestRun?.status === "failed"
+    ? "Check the notes below, adjust the file or mapping, and try again."
+    : "Click Build my dashboard to clean this file and generate your metrics.";
 
   return (
     <DashboardShell
@@ -105,23 +158,33 @@ export default async function DataQualityForUploadPage({
               </span>
               <div>
                 <div className="text-sm font-medium text-brand-800">
-                  Ready to process
+                  {alreadyProcessed ? "Processed" : "Ready to process"}
                 </div>
                 <h2 className="font-display text-xl font-semibold tracking-tight">
-                  Your file looks good.
+                  {headline}
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Full bronze→silver→gold processing lands in Phase 3. For now,
-                  your workspace will continue to show the demo dashboard.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{subhead}</p>
               </div>
             </div>
-            <Button size="lg" asChild>
-              <Link href="/dashboard">
-                Back to dashboard
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              {alreadyProcessed ? (
+                <Button size="lg" asChild>
+                  <Link href="/dashboard">
+                    Back to dashboard
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <BuildDashboardButton uploadId={upload.id} size="lg" />
+              )}
+              {alreadyProcessed && (
+                <BuildDashboardButton
+                  uploadId={upload.id}
+                  size="sm"
+                  label="Re-build from this file"
+                />
+              )}
+            </div>
           </div>
 
           <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

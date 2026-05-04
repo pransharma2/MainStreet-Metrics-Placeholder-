@@ -1,0 +1,32 @@
+Ticket,Date,Customer,Email,Item,SKU,Category,Qty,Price,Discount,Tax,Tip,Total,Channel,Refund
+C-2001,03/01/2025,Walk-in,,Latte,CAF-LAT-12,Drinks,1,4.75,0,0.36,0.50,5.61,In-store,0
+C-2002,03/01/2025,Walk-in,,Croissant,BAK-CRO-01,Pastries,2,3.50,0,0.52,0.00,7.52,In-store,0
+C-2003,3/1/25,Marco Lin,marco.lin@example.com,Cappuccino,CAF-CAP-12,Drinks,1,4.95,0.50,0.33,0.00,4.78,Square,0
+C-2004,March 2 2025,Walk-in,,Avocado Toast,BAK-AVT-01,Food,1,"$11.50",0,0.86,0.00,"$12.36",In-store,0
+C-2005,2025-03-02,Jae Park,jae@example.com,Matcha Latte,CAF-MTL-12,Drinks,1,5.75,0,0.43,0.00,6.18,Square,0
+C-2006,2025-03-02,Walk-in,,Banana Bread,BAK-BAN-01,Pastries,1,4.25,0,0.32,0.00,4.57,In-store,0
+C-2007,03-03-2025,Maya Cruz,maya.cruz@example.com,Latte,CAF-LAT-16,Drinks,1,5.25,0,0.39,0.50,6.14,Square,0
+C-2008,2025-03-03,Walk-in,,Drip Coffee,CAF-DRP-12,Drinks,2,3.25,0,0.49,0.00,6.99,In-store,0
+C-2009,2025-03-04,Walk-in,,Muffin,BAK-MUF-01,Pastries,1,3.75,0,0.28,0.00,4.03,In-store,0
+C-2010,2025-03-05,Kevin O'Hara,kohara@example.com,Cold Brew,CAF-CLB-16,Drinks,1,5.00,0,0.38,0.00,5.38,Square,0
+C-2011,2025-03-06,Walk-in,,Espresso,CAF-ESP-02,Drinks,1,3.00,0,0.23,0.00,3.23,In-store,0
+C-2012,2025-03-06,Walk-in,,Latte,CAF-LAT-12,Drinks,1,4.75,0,0.36,0.50,5.61,In-store,0
+C-2013,2025-03-07,Marco Lin,marco.lin@example.com,Avocado Toast,BAK-AVT-01,Food,1,11.50,0,0.86,0.00,12.36,Square,0
+C-2014,3/8/2025,Walk-in,,Croissant,BAK-CRO-01,Pastries,1,3.50,0,0.26,0.00,3.76,In-store,0
+C-2015,2025-03-09,Alex Kim,alex.kim@example.com,Matcha Latte,CAF-MTL-12,Drinks,2,5.75,0.50,0.81,0.00,11.81,Square,0
+C-2016,2025-03-10,Walk-in,,Drip Coffee,CAF-DRP-12,Drinks,1,3.25,0,0.24,0.00,3.49,In-store,0
+C-2017,2025-03-11,Maya Cruz,maya.cruz@example.com,Latte,CAF-LAT-16,Drinks,1,5.25,0,0.39,0.00,5.64,Square,0
+C-2018,2025-03-12,Walk-in,,Banana Bread,BAK-BAN-01,Pastries,1,4.25,0,0.32,0.00,4.57,In-store,0
+C-2019,2025-03-13,Jae Park,jae@example.com,Cold Brew,CAF-CLB-16,Drinks,1,5.00,0,0.38,0.00,5.38,Square,0
+C-2020,3/14/2025,Walk-in,,Cappuccino,CAF-CAP-12,Drinks,1,4.95,0,0.37,0.50,5.82,In-store,0
+C-2021,2025-03-15,Walk-in,,Avocado Toast,BAK-AVT-01,Food,1,11.50,0,0.86,0.00,12.36,In-store,0
+C-2022,2025-03-15,Kevin O'Hara,kohara@example.com,Latte,CAF-LAT-12,Drinks,2,4.75,0.25,0.70,0.00,9.95,Square,0
+C-2023,2025-03-16,Walk-in,,Muffin,BAK-MUF-01,Pastries,1,3.75,0,0.28,0.00,4.03,In-store,0
+C-2023-R,2025-03-16,Walk-in,,Muffin,BAK-MUF-01,Pastries,-1,3.75,0,0,0,(4.03),In-store,4.03
+C-2024,2025-03-17,Walk-in,,Drip Coffee,CAF-DRP-12,Drinks,1,3.25,0,0.24,0.00,3.49,In-store,0
+C-2025,March 18 2025,Marco Lin,marco.lin@example.com,Latte,CAF-LAT-12,Drinks,1,4.75,0,0.36,0.50,5.61,Square,0
+C-2026,2025-03-19,Walk-in,,Croissant,BAK-CRO-01,Pastries,2,3.50,0,0.52,0.00,7.52,In-store,0
+C-2027,2025-03-20,Alex Kim,alex.kim@example.com,Matcha Latte,CAF-MTL-12,Drinks,1,5.75,0,0.43,0.00,6.18,Square,0
+C-2028,2025-03-21,Walk-in,,Latte,CAF-LAT-16,Drinks,1,5.25,0,0.39,0.00,5.64,In-store,0
+C-2029,2025-03-22,Walk-in,,Banana Bread,BAK-BAN-01,Pastries,1,4.25,0,0.32,0.00,4.57,In-store,0
+C-2030,2025-03-23,Jae Park,jae@example.com,Cappuccino,CAF-CAP-12,Drinks,1,4.95,0,0.37,0.00,5.32,Square,0
