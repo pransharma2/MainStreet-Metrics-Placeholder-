@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, FileUp, LineChart, Sparkles } from "lucide-react";
+import { ArrowRight, LineChart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Hero() {
@@ -26,9 +26,9 @@ export function Hero() {
           </div>
 
           <h1 className="font-display text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            Turn messy sales exports into{" "}
+            Stop guessing what&apos;s working in your{" "}
             <span className="relative whitespace-nowrap text-brand-700">
-              clean dashboards
+              small business
               <span
                 aria-hidden="true"
                 className="absolute -bottom-1 left-0 right-0 h-[6px] rounded-full bg-brand-400/50"
@@ -38,31 +38,30 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Upload your Square, Shopify, Etsy, or Excel sales files. We clean,
-            standardize, and explain the data — so you can see what sold, who
-            came back, and what to do next.
+            Upload sales exports from Shopify, Square, Etsy, or a spreadsheet
+            and get a clean dashboard showing revenue trends, top products,
+            repeat customers, and plain-English insights.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
-              <Link href="/signup">
-                Start free
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="secondary" asChild>
               <Link href="/demo">
                 <LineChart className="h-4 w-4" />
                 View demo dashboard
               </Link>
             </Button>
-            <Button size="lg" variant="ghost" asChild>
-              <Link href="/dashboard/upload">
-                <FileUp className="h-4 w-4" />
-                Upload sample file
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/signup">
+                Start free
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </div>
+
+          <p className="mt-5 max-w-xl text-xs text-muted-foreground sm:text-sm">
+            No data team needed. No complicated setup. Just upload your file
+            and see what your sales are telling you.
+          </p>
 
           <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
