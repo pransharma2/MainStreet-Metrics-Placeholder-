@@ -8,8 +8,14 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Run on every request except Next internals and static files.
+     * Run on every request EXCEPT:
+     *   - Next internals (_next/static, _next/image)
+     *   - favicon
+     *   - static asset file extensions
+     *   - the public /demo experience (so it can never redirect to /login)
+     *
+     * /demo and /demo/* are always publicly accessible.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|demo(?:/.*)?$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
