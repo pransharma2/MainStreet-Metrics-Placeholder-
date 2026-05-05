@@ -25,7 +25,7 @@ export function FinalCTA() {
                 </Link>
               </Button>
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/dashboard">View the demo</Link>
+                <Link href="/demo">View the demo</Link>
               </Button>
             </div>
           </div>

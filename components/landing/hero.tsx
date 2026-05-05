@@ -51,7 +51,7 @@ export function Hero() {
               </Link>
             </Button>
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/dashboard">
+              <Link href="/demo">
                 <LineChart className="h-4 w-4" />
                 View demo dashboard
               </Link>
