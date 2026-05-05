@@ -4,6 +4,19 @@
 
 ---
 
+## 0. Public repository — safety rules (read first)
+
+**This repository is public on GitHub** ([pransharma2/MainStreet-Metrics-Placeholder-](https://github.com/pransharma2/MainStreet-Metrics-Placeholder-)). Treat every change as if it will be visible to recruiters, customers, and security scanners within minutes of pushing.
+
+- **Never commit secrets.** No real Supabase URL, anon key, service role key, OAuth client secret, Stripe key, or anything that looks like a credential. `.env.local` is gitignored — keep it that way. `.env.local.example` documents required env vars with placeholder values only.
+- **Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.** It's only allowed inside `lib/supabase/admin.ts`, which begins with `import "server-only"`. If a client component imports it, the build will fail — do not work around that guard.
+- **Use npm only.** The project moved from `pnpm` to `npm` in Phase 3.5. Do not reintroduce `pnpm`, `pnpm-lock.yaml`, or a `packageManager` field. Mixing tools desyncs the lockfile.
+- **Preserve the polished UI.** The landing page, dashboard, and `/demo/*` routes are portfolio + investor-demo material. Do not regress the design when adding features. Keep friendly microcopy.
+- **Current branch:** `feature/adding-Phase-4`. Phase 4 work happens here until merged.
+- **Generated/cache files stay out of git.** `tsconfig.tsbuildinfo`, `.next/`, `node_modules/`, `*.log`, and any `.env*` files must remain ignored.
+
+---
+
 ## 1. Product Summary
 
 **MainStreet Metrics** is a small-business sales analytics product.
@@ -26,7 +39,24 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 
 ## 2. Current Project Status
 
-**Phase 1, Phase 2, Phase 3, and Phase 3.5 (verification + hardening) are complete. `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.**
+**Phase 1, Phase 2, Phase 3, and Phase 3.5 are complete. Phase 4 is in progress on `feature/adding-Phase-4`.** `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.
+
+### Phase 4 — In progress on `feature/adding-Phase-4`
+
+Completed chunks on this branch:
+- ✅ **Public demo experience** — `/demo` index plus `/demo/[businessType]` for `boutique`, `cafe`, and `etsy`. Renders the real dashboard components against `lib/demo-data.ts`. No signup required. Backed by `components/demo/demo-shell.tsx` and `components/demo/demo-business-card.tsx`.
+- ✅ **Landing page conversion improvements** — see commit `9fe444e`.
+- ✅ **Public repo readiness pass** — `tsconfig.tsbuildinfo` removed from tracking, `.gitignore` tightened, `.env.local.example` added, README rewritten for public/portfolio audience, this CLAUDE.md updated with public-repo rules.
+
+Next planned Phase 4 chunks (pick by business value, do not start without confirmation):
+- Saved per-source mapping templates so repeat uploads with the same headers become a one-click confirm.
+- Workspace switcher UI on top of `business_users` (schema already supports it).
+- PDF export of the current dashboard as a monthly report.
+- Email reports — weekly digest via Supabase scheduled functions + a transactional email provider.
+- Incremental gold updates instead of full-business rebuild.
+- Real Google OAuth (today the button is a "Coming soon" stub).
+
+Phase 4 should **not** add Stripe, real OAuth (until explicitly scheduled), live API connectors, schema changes beyond what's needed for the chunk in flight, or onboarding/lead-form features.
 
 ### Phase 1 — Frontend MVP (done)
 - Polished frontend-first MVP shell
@@ -334,18 +364,18 @@ Phase 3 has not yet been end-to-end verified by the user against a live Supabase
 
 ---
 
-## 10. Suggested Next Phase (Phase 4)
+## 10. Phase 4 backlog
 
-Phase 3 is shipped. Good candidates for Phase 4 (pick what has the most business value):
+See section 2 for the canonical list. The remaining unstarted chunks are:
 
-- **Saved mapping templates** per source — remember a user's approved mapping and auto-apply on future uploads with matching headers so step 3 becomes a one-click confirmation.
-- **Workspace switcher UI** — surface `business_users` as a dropdown (schema already supports it).
-- **PDF export** — render the current dashboard to a downloadable monthly report.
-- **Email reports** — schedule a weekly "here's your numbers" digest using Supabase scheduled functions + a transactional email provider.
-- **Incremental gold updates** — replace full-business rebuild with per-upload delta for scale.
-- **Google OAuth** — wire the existing "Coming soon" button through Supabase.
+- Saved per-source mapping templates.
+- Workspace switcher UI.
+- PDF export.
+- Email reports.
+- Incremental gold updates.
+- Real Google OAuth.
 
-Phase 3 should **not** add Stripe, real OAuth, PDF exports, or external API connectors yet.
+Out of scope for Phase 4 unless the user explicitly requests it: Stripe billing, live API connectors (Shopify / Square / Etsy), Power BI embed, FastAPI worker, schema migrations beyond what a chunk needs, onboarding flows, lead-capture forms.
 
 ---
 
@@ -353,8 +383,11 @@ Phase 3 should **not** add Stripe, real OAuth, PDF exports, or external API conn
 
 Strict rules for any future session working on this project:
 
+- **Do not** commit secrets. The repo is public — see section 0.
+- **Do not** reintroduce `pnpm`, `pnpm-lock.yaml`, or a `packageManager` field. Use npm only.
+- **Do not** commit generated files (`tsconfig.tsbuildinfo`, `.next/`, `node_modules/`, `*.log`, anything matching `.env*` other than `.env.local.example`).
 - **Do not** redesign the app from scratch.
-- **Do not** remove the polished Phase 1 design.
+- **Do not** remove the polished Phase 1 design or the `/demo/*` experience.
 - **Do not** skip verification before moving to the next phase.
 - **Do not** expose `SUPABASE_SERVICE_ROLE_KEY` to the browser. It must only be imported from `lib/supabase/admin.ts`, which has `import "server-only"`.
 - **Do not** remove RLS.
