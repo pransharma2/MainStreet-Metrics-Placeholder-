@@ -22,13 +22,28 @@ const ACCENT_CLASSES: Record<DemoSummary["accent"], string> = {
   neutral: "bg-muted text-foreground ring-border",
 };
 
+/**
+ * Demo picker card.
+ *
+ * Must always link to the public `summary.href` (`/demo/boutique`,
+ * `/demo/cafe`, `/demo/etsy`). NEVER to `/dashboard`, which is the
+ * authenticated route.
+ *
+ * We use a single outer Link that wraps the whole card, plus a visible
+ * text CTA (styled like a link). Both target `summary.href` explicitly,
+ * read from `lib/demo-data.ts`.
+ */
 export function DemoBusinessCard({ summary }: { summary: DemoSummary }) {
   const Icon = ICONS[summary.slug];
+  const href = summary.href; // always `/demo/${slug}`
+
   return (
     <Link
-      href={`/demo/${summary.slug}`}
+      href={href}
+      prefetch={false}
       className="group block focus:outline-none"
-      aria-label={`View ${summary.headline} demo dashboard`}
+      aria-label={`View the ${summary.headline} demo dashboard`}
+      data-demo-target={href}
     >
       <Card className="h-full overflow-hidden transition-all group-hover:-translate-y-[2px] group-hover:shadow-lg group-focus-visible:ring-2 group-focus-visible:ring-brand-500">
         <div className="relative h-28 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-warm-50">
@@ -80,7 +95,7 @@ export function DemoBusinessCard({ summary }: { summary: DemoSummary }) {
               <dd className="mt-1 text-sm font-medium">{summary.customersLabel}</dd>
             </div>
           </dl>
-          <div className="flex items-center justify-between pt-1 text-sm font-medium text-brand-700">
+          <div className="flex items-center justify-between rounded-xl bg-brand-50 px-3 py-2.5 text-sm font-medium text-brand-800 ring-1 ring-brand-100 transition-colors group-hover:bg-brand-100">
             <span>View demo dashboard</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </div>

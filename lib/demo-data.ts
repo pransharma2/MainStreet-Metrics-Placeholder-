@@ -34,6 +34,13 @@ export type DemoBusinessType = "boutique" | "cafe" | "etsy";
 
 export interface DemoSummary {
   slug: DemoBusinessType;
+  /**
+   * Canonical public demo URL for this business.
+   * Always `/demo/${slug}`. Never `/dashboard`.
+   * Computed once, at data time, so UI components cannot accidentally
+   * point the card at the authenticated dashboard.
+   */
+  href: `/demo/${DemoBusinessType}`;
   business: DemoBusiness;
   headline: string;
   description: string;
@@ -446,6 +453,7 @@ function fmtRev(n: number): string {
 export const demoSummaries: DemoSummary[] = [
   {
     slug: "boutique",
+    href: "/demo/boutique",
     business: BOUTIQUE.business,
     headline: "Willow & Sage Boutique",
     description:
@@ -461,6 +469,7 @@ export const demoSummaries: DemoSummary[] = [
   },
   {
     slug: "cafe",
+    href: "/demo/cafe",
     business: CAFE.business,
     headline: "Morning Mug Café",
     description:
@@ -474,6 +483,7 @@ export const demoSummaries: DemoSummary[] = [
   },
   {
     slug: "etsy",
+    href: "/demo/etsy",
     business: ETSY.business,
     headline: "North Star Handmade",
     description:
