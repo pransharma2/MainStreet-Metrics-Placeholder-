@@ -16,7 +16,7 @@ This is a working portfolio / product-validation prototype. The frontend is inve
 | **Phase 2** | Supabase backend — auth, multi-business workspaces, RLS, file uploads, Storage, column detection, mapping persistence | ✅ Shipped |
 | **Phase 3** | Medallion pipeline — bronze raw rows, validation, silver normalization, gold aggregations, rules-based insights, dashboard reads real data | ✅ Shipped |
 | **Phase 3.5** | Verification & hardening — npm-only workflow, self-hosted fonts, race-safe processing, clean `npm run build` | ✅ Shipped |
-| **Phase 4 (in progress)** | Public demo experience (`/demo/*`) and landing-page conversion improvements | 🚧 In progress on `feature/adding-Phase-4` |
+| **Phase 4** | Public demo, landing conversion, printable insight report, onboarding + business profile, dashboard explanation layer, settings, lead capture, final polish + deployment readiness | 🚧 Wrapping up on `feature/adding-Phase-4` |
 
 See [Roadmap](#roadmap) for what's next.
 
@@ -39,6 +39,10 @@ Each one renders the real dashboard components against a realistic, messy sample
 
 - **Beautiful landing page** with hero, stat strip, "how it works", features, insights preview, dashboard preview, pricing, FAQ, and final CTA.
 - **Public demo experience** at `/demo/*` so visitors can explore three full sample dashboards without signing up.
+- **Public lead capture** at `/request-dashboard` — friendly form that writes to `early_access_leads` (anon-insert RLS only; nobody can read leads back from the browser).
+- **Onboarding + business profile** — first-time users complete a short questionnaire (industry, time zone, main source, primary goal). Editable later under **Settings**.
+- **Dashboard explanation layer** — every chart pairs with a deterministic "what this means / why it matters / next step" panel. No AI; pure rules over real data.
+- **Printable insight report** at `/dashboard/report` and `/demo/[businessType]/report` — `window.print()` only, no PDF library.
 - **Real auth** — Supabase email/password with friendly error mapping. Google OAuth stubbed as "Coming soon".
 - **Multi-business workspaces** — every business-scoped table is RLS-protected; users only see their own rows.
 - **Drag-and-drop uploads** for CSV / XLSX up to 10 MB, parsed in Node.
@@ -48,6 +52,8 @@ Each one renders the real dashboard components against a realistic, messy sample
 - **Rules-based insights** — top-product concentration, strongest sales day, repeat-customer value, slow movers, MoM trend, AOV, missing-email warnings, and more.
 - **Demo-data fallback** — until a workspace has its first processed upload, the dashboard renders the polished Willow & Sage demo with a clear banner so new users always see a beautiful page.
 - **Self-hosted fonts** — Inter + Fraunces bundled locally, no Google Fonts fetch at build time.
+- **Friendly 404 + error boundary** — `app/not-found.tsx` and `app/error.tsx` keep the brand visible when something breaks.
+- **Production-grade headers** — `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS, and `poweredByHeader: false` configured in `next.config.mjs`.
 
 ---
 
@@ -225,19 +231,31 @@ mainstreet-metrics/
 ├── app/
 │   ├── (auth)/                       # login + signup pages and server actions
 │   ├── api/uploads/                  # upload, mapping, process route handlers
-│   ├── dashboard/                    # dashboard, upload, mapping, file-check, settings
+│   ├── dashboard/                    # dashboard, upload, mapping, file-check, onboarding, report, settings
 │   ├── demo/                         # public demo experience (Phase 4)
-│   ├── globals.css                   # theme tokens + utilities
-│   ├── layout.tsx                    # root layout (fonts, metadata)
+│   ├── request-dashboard/            # public lead-capture page (Phase 4)
+│   ├── globals.css                   # theme tokens + utilities + print styles
+│   ├── icon.svg                      # brand favicon
+│   ├── robots.ts                     # /robots.txt route
+│   ├── error.tsx                     # friendly global error boundary
+│   ├── not-found.tsx                 # friendly 404
+│   ├── layout.tsx                    # root layout (fonts, metadata, viewport)
 │   └── page.tsx                      # landing page
 ├── components/
 │   ├── brand/                        # logo
-│   ├── dashboard/                    # MetricCard, InsightCard, charts, tables, shell
+│   ├── dashboard/                    # MetricCard, InsightCard, charts, tables, shell, onboarding card, explanation card
 │   ├── demo/                         # public-demo shell + cards
 │   ├── landing/                      # hero, stat strip, sections, CTA, footer
+│   ├── leads/                        # lead-capture form
 │   ├── mapping/                      # mapping table editor
+│   ├── onboarding/                   # onboarding form
+│   ├── report/                       # printable report view
+│   ├── settings/                     # business profile form
 │   ├── upload/                       # dropzone + recent uploads
 │   └── ui/                           # Button, Card, Badge, Input, Label, Separator
+├── docs/
+│   ├── deployment.md                 # Vercel + Supabase deploy guide
+│   └── phase-4-handoff.md            # condensed state at the start of Phase 4
 ├── lib/
 │   ├── processing/                   # pure bronze/silver/gold/insights/validation
 │   ├── supabase/                     # browser, server, admin, middleware clients
@@ -253,6 +271,7 @@ mainstreet-metrics/
 │   ├── schema.sql                    # full schema (apply once)
 │   └── migrations/                   # idempotent additive migrations
 ├── middleware.ts                     # session refresh + route guard
+├── next.config.mjs                   # security headers, poweredByHeader off
 └── package.json
 ```
 
@@ -266,6 +285,14 @@ mainstreet-metrics/
 
 ---
 
+## Deployment
+
+The app is a stock Next.js 14 App Router project, so any Node 18.17+ host works. The recommended path is **Vercel + Supabase** — see [`docs/deployment.md`](./docs/deployment.md) for the step-by-step guide (env vars, Supabase auth redirects, post-deploy verification checklist).
+
+The build is hermetic: fonts are self-hosted, no third-party fetches happen at build time, and every secret comes from environment variables. Security headers (HSTS, Referrer-Policy, X-Content-Type-Options, Permissions-Policy) are wired up in `next.config.mjs`, and `/robots.txt` automatically disallows `/dashboard`, `/api`, `/login`, and `/signup`.
+
+---
+
 ## Roadmap
 
 **Done:**
@@ -273,17 +300,15 @@ mainstreet-metrics/
 - ✅ **Phase 2** — Supabase Auth + Postgres + RLS; file upload, parsing, column detection, mapping persistence.
 - ✅ **Phase 3** — Medallion pipeline (bronze → silver → gold), rules-based validation + insights, real dashboard data with demo fallback.
 - ✅ **Phase 3.5** — Verification + hardening: npm-only, self-hosted fonts, race-safe processing endpoint, clean `npm run build`.
-- ✅ **Phase 4 (in progress)** — Public demo experience at `/demo/*`; landing-page conversion improvements.
+- ✅ **Phase 4** — Public demo experience, landing-page conversion, printable insight report, onboarding + business profile, dashboard explanation layer, settings, public lead capture (`/request-dashboard`), final polish + deployment readiness.
 
-**Next on Phase 4:**
+**Later (deferred — not started):**
 - Saved per-source mapping templates so repeat uploads with the same headers become a one-click confirmation.
 - Workspace switcher UI on top of the existing `business_users` schema.
-- PDF export of the current dashboard as a monthly report.
+- PDF export library (today: `window.print()` from `/dashboard/report`).
 - Email reports — weekly digest via Supabase scheduled functions + a transactional email provider.
 - Incremental gold updates instead of full rebuild.
 - Real Google OAuth (today the button is a "Coming soon" stub).
-
-**Later:**
 - Stripe billing.
 - Live API connectors for Shopify / Square / Etsy.
 - Power BI embed.

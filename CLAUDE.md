@@ -39,28 +39,7 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 
 ## 2. Current Project Status
 
-<<<<<<< HEAD
-**Phase 1, Phase 2, Phase 3, and Phase 3.5 are complete. Phase 4 is in progress on `feature/adding-Phase-4`.** `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.
-
-### Phase 4 — In progress on `feature/adding-Phase-4`
-
-Completed chunks on this branch:
-- ✅ **Public demo experience** — `/demo` index plus `/demo/[businessType]` for `boutique`, `cafe`, and `etsy`. Renders the real dashboard components against `lib/demo-data.ts`. No signup required. Backed by `components/demo/demo-shell.tsx` and `components/demo/demo-business-card.tsx`.
-- ✅ **Landing page conversion improvements** — see commit `9fe444e`.
-- ✅ **Public repo readiness pass** — `tsconfig.tsbuildinfo` removed from tracking, `.gitignore` tightened, `.env.local.example` added, README rewritten for public/portfolio audience, this CLAUDE.md updated with public-repo rules.
-
-Next planned Phase 4 chunks (pick by business value, do not start without confirmation):
-- Saved per-source mapping templates so repeat uploads with the same headers become a one-click confirm.
-- Workspace switcher UI on top of `business_users` (schema already supports it).
-- PDF export of the current dashboard as a monthly report.
-- Email reports — weekly digest via Supabase scheduled functions + a transactional email provider.
-- Incremental gold updates instead of full-business rebuild.
-- Real Google OAuth (today the button is a "Coming soon" stub).
-
-Phase 4 should **not** add Stripe, real OAuth (until explicitly scheduled), live API connectors, schema changes beyond what's needed for the chunk in flight, or onboarding/lead-form features.
-=======
-**Phase 1, Phase 2, Phase 3, Phase 3.5 (verification + hardening), and Phase 4 chunks 1–3 (public demo + landing conversion) are complete. `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user. Phase 4 work is happening on the `feature/adding-Phase-4` branch.**
->>>>>>> c07e82643548c0f6b9c8ebe13f048a20022709d0
+**Phase 1, Phase 2, Phase 3, Phase 3.5, and Phase 4 chunks 1–8 are complete. Phase 4 chunk 9 (final polish + deployment readiness) is the current work on `feature/adding-Phase-4`.** `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.
 
 ### Phase 1 — Frontend MVP (done)
 - Polished frontend-first MVP shell
@@ -176,13 +155,49 @@ Shipped on `feature/adding-Phase-4`. Goal: make the product customer-demo-ready 
 - `components/landing/faq.tsx` — replaced all 6 Q&A pairs with a customer-facing set: data/spreadsheets, file types, Shopify/Square connectors, privacy, done-for-you, large companies.
 - `components/landing/final-cta.tsx` — new heading "Ready to see what your sales data is trying to tell you?" CTA order is now **View demo dashboard → /demo** (primary), **Start free → /signup** (secondary).
 
-**Chunks not yet started in this phase:**
-- Chunk 4 — Onboarding + business profile (requires a small schema migration `0003_phase4.sql` adding `industry`, `timezone`, `tagline`, `main_source`, `primary_goal`, `onboarded_at` to `businesses`; RLS unchanged).
-- Chunk 5 — Dashboard explanation layer (deterministic "what this means / why it matters / next step" tooltips + panel).
-- Chunk 6 — Insight report page at `/dashboard/report`, `window.print()` only (no PDF lib).
-- Chunk 7 — Settings / business profile polish.
-- Chunk 8 — Lead CTA path (`early_access_leads` table + friendly form, anon-insert RLS only).
-- Chunk 9 — Small product polish + README + CLAUDE.md refresh.
+**Chunk 3 — Printable insight report (done)**
+- `app/dashboard/report/page.tsx` + `app/demo/[businessType]/report/page.tsx` — printable monthly-report view that reuses dashboard data. `window.print()` only — no PDF library.
+- `components/report/*` — `report-view`, `report-section`, `report-metric-card`, `recommendation-card`, `print-report-button`.
+- Print styles live in `app/globals.css` under `@media print` — hides `.no-print` chrome, reveals `.print-only`, page-break rules, edge-to-edge layout.
+
+**Chunk 4 — Onboarding + business profile (done)**
+- `supabase/migrations/0003_phase4_onboarding.sql` — additive columns on `businesses`: `industry`, `timezone`, `tagline`, `main_source`, `primary_goal`, `onboarded_at`. Idempotent. RLS unchanged.
+- `app/dashboard/onboarding/page.tsx` + `components/onboarding/onboarding-form.tsx` — 1-step questionnaire that writes the new columns and stamps `onboarded_at`. New users routed here once before `/dashboard`.
+
+**Chunk 5 — Dashboard explanation layer (done)**
+- `components/dashboard/explanation-card.tsx` — deterministic "what this means / why it matters / next step" panel that reads from existing dashboard data. No AI; pure rules.
+- `components/dashboard/onboarding-card.tsx` — call-to-finish card that surfaces on `/dashboard` until the business is onboarded.
+
+**Chunk 6 — Settings / business profile polish (done)**
+- `app/dashboard/settings/page.tsx` + `components/settings/business-profile-form.tsx` — edit the same fields captured at onboarding (industry, timezone, tagline, main source, primary goal, business name).
+
+**Chunk 7 — Period + insight + dashboard layout fixes (done, commit `97f223c`)**
+- `lib/dashboard-data.ts` — report period guards; insight guards for empty/edge data; safe fallbacks.
+- Dashboard card layout polish.
+
+**Chunk 8 — Lead CTA path (done, commit `cfd8e34`)**
+- `supabase/migrations/0004_phase4_leads.sql` — `early_access_leads` table. RLS: anon insert allowed, no select/update/delete from anon. Captures email + (optional) business name + source.
+- `app/request-dashboard/page.tsx` — public route. Loads while logged out (matcher excludes it).
+- `components/leads/lead-form.tsx` — friendly submit form. Validates email, friendly errors, success state.
+- Landing-page footer + final-CTA wired to `/request-dashboard`.
+- `/dashboard` still gated. `/demo` still public. Verified by user 2026-05-06.
+
+**Chunk 9 — Final polish + deployment readiness (in progress)**
+- Friendly 404 page (`app/not-found.tsx`) and error boundary (`app/error.tsx`).
+- Brand favicon (`app/icon.svg`).
+- `app/robots.ts` — disallow `/dashboard/*` and `/api/*` for crawlers.
+- Extended root metadata: viewport, themeColor, twitter card, robots directives.
+- Security headers + `poweredByHeader: false` in `next.config.mjs`.
+- `docs/deployment.md` — Vercel deploy walkthrough (env vars, build settings, post-deploy verification).
+- README + this CLAUDE.md refreshed to reflect chunks 3–9.
+
+**Still out of scope for Phase 4:**
+- Saved per-source mapping templates.
+- Workspace switcher UI.
+- Email reports (weekly digest via scheduled functions + transactional provider).
+- Incremental gold updates (today: full-business rebuild on every process).
+- Real Google OAuth.
+- Stripe billing, live Shopify/Square/Etsy connectors, Power BI embed, FastAPI worker, PDF library.
 
 **Guardrails honored so far in Phase 4:**
 - No Supabase schema or migration changes yet (chunks 1–2 are UI-only).
@@ -414,18 +429,18 @@ Phase 3 has not yet been end-to-end verified by the user against a live Supabase
 
 ---
 
-## 10. Phase 4 backlog
+## 10. Phase 4 backlog (post-merge)
 
-See section 2 for the canonical list. The remaining unstarted chunks are:
+After chunk 9 ships and `feature/adding-Phase-4` merges, the remaining product backlog is:
 
 - Saved per-source mapping templates.
 - Workspace switcher UI.
-- PDF export.
-- Email reports.
+- PDF export (today: `window.print()` only).
+- Email reports (weekly digest via scheduled functions + transactional provider).
 - Incremental gold updates.
 - Real Google OAuth.
 
-Out of scope for Phase 4 unless the user explicitly requests it: Stripe billing, live API connectors (Shopify / Square / Etsy), Power BI embed, FastAPI worker, schema migrations beyond what a chunk needs, onboarding flows, lead-capture forms.
+Explicitly out of scope unless the user requests them: Stripe billing, live Shopify/Square/Etsy API connectors, Power BI embed, FastAPI worker.
 
 ---
 
