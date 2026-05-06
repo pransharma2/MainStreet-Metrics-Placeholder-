@@ -86,3 +86,72 @@
     mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   }
 }
+
+/* ----------------------------------------------------------------------- */
+/* Print styles                                                            */
+/*                                                                         */
+/* The /dashboard/report and /demo/[businessType]/report pages are         */
+/* designed to be printed. We hide nav chrome and color-heavy backgrounds  */
+/* so the content reads well on paper.                                     */
+/* ----------------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 0.6in;
+  }
+
+  /* Don't print anything explicitly opted out. */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reveal print-only chrome (header, footer notes). */
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Avoid awkward breaks inside cards/sections. */
+  .break-inside-avoid,
+  .report-section,
+  .report-section-number {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* The whole report should sit edge-to-edge on the page. */
+  .report-page {
+    background: #ffffff !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .report-section {
+    box-shadow: none !important;
+    border-color: #e5e7eb !important;
+    background: #ffffff !important;
+    padding: 0.4in 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  .report-section + .report-section {
+    border-top: 1px solid #e5e7eb !important;
+  }
+
+  /* Charts shouldn't overflow a page. */
+  .recharts-responsive-container {
+    max-height: 3.2in !important;
+  }
+}
+
+.print-only {
+  display: none;
+}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FileUp, Info, Sparkles, CalendarClock } from "lucide-react";
+import { FileUp, Info, Sparkles, CalendarClock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -90,6 +90,12 @@ export default function DemoDashboardPage({
                 </Link>
               </Button>
               <Button asChild variant="secondary">
+                <Link href={`/demo/${slug}/report`}>
+                  <FileText className="h-4 w-4" />
+                  View sample report
+                </Link>
+              </Button>
+              <Button asChild variant="ghost">
                 <Link href="/#pricing">
                   <CalendarClock className="h-4 w-4" />
                   Get a dashboard built for you

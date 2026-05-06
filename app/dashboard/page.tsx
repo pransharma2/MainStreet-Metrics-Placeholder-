@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, Filter, Sparkles, UploadCloud, Info } from "lucide-react";
+import { Filter, UploadCloud, Info, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -84,9 +84,11 @@ export default async function DashboardPage() {
             <Filter className="h-4 w-4" />
             Last 30 days
           </Button>
-          <Button variant="secondary" size="sm" disabled>
-            <Download className="h-4 w-4" />
-            Export
+          <Button asChild size="sm">
+            <Link href="/dashboard/report">
+              <FileText className="h-4 w-4" />
+              View report
+            </Link>
           </Button>
         </div>
       }
@@ -226,9 +228,11 @@ export default async function DashboardPage() {
                   : "Plain-English insights, each with a suggested next step. Upload your file to see real ones."}
               </p>
             </div>
-            <Button variant="ghost" size="sm" disabled>
-              <Sparkles className="h-4 w-4" />
-              Regenerate
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/dashboard/report">
+                <FileText className="h-4 w-4" />
+                View full report
+              </Link>
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
