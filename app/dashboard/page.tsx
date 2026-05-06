@@ -18,6 +18,7 @@ import { RevenueByChannelChart } from "@/components/dashboard/revenue-by-channel
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { CustomerInsights } from "@/components/dashboard/customer-insights";
 import { DataQualityCard } from "@/components/dashboard/data-quality-card";
+import { ExplanationButton } from "@/components/dashboard/explanation-card";
 import { requireActiveSession } from "@/lib/workspace";
 import { loadDashboardData } from "@/lib/dashboard-data";
 import {
@@ -152,7 +153,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>Sales trend</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>Sales trend</CardTitle>
+                  <ExplanationButton explanationKey="sales_trend" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData
                     ? "Revenue over the last 30 days from your uploaded file."
@@ -178,7 +182,14 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Revenue by channel</CardTitle>
+              <div className="flex items-center gap-1.5">
+                <CardTitle>Revenue by channel</CardTitle>
+                <ExplanationButton
+                  explanationKey="revenue_by_channel"
+                  size="sm"
+                  align="right"
+                />
+              </div>
               <CardDescription>
                 {data.hasRealData && data.channelRevenue
                   ? "Where your sales are coming from."
@@ -195,7 +206,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>Top products</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>Top products</CardTitle>
+                  <ExplanationButton explanationKey="top_products" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData
                     ? "Your best sellers by revenue."
@@ -211,7 +225,14 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Customer mix</CardTitle>
+              <div className="flex items-center gap-1.5">
+                <CardTitle>Customer mix</CardTitle>
+                <ExplanationButton
+                  explanationKey="customer_mix"
+                  size="sm"
+                  align="right"
+                />
+              </div>
               <CardDescription>
                 {data.hasRealData
                   ? "New vs. repeat vs. inactive."
@@ -301,7 +322,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>File check</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>File check</CardTitle>
+                  <ExplanationButton explanationKey="data_quality" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData && data.dataQualityItems
                     ? "We checked your latest file — here's what we found."

@@ -1,8 +1,16 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OverviewMetric } from "@/lib/sample-data";
+import { ExplanationButton } from "@/components/dashboard/explanation-card";
+import {
+  DASHBOARD_EXPLANATIONS,
+  type ExplanationKey,
+} from "@/lib/dashboard-explanations";
 
 export function MetricCard({ metric }: { metric: OverviewMetric }) {
+  const explanationKey = (
+    metric.id in DASHBOARD_EXPLANATIONS ? metric.id : null
+  ) as ExplanationKey | null;
   const dir = metric.delta?.direction ?? "flat";
   const DeltaIcon =
     dir === "up" ? ArrowUpRight : dir === "down" ? ArrowDownRight : Minus;
@@ -23,13 +31,22 @@ export function MetricCard({ metric }: { metric: OverviewMetric }) {
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br p-5 shadow-soft transition-shadow hover:shadow-card",
+        "group relative rounded-2xl border border-border/70 bg-gradient-to-br p-5 shadow-soft transition-shadow hover:shadow-card",
         accentBg
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {metric.label}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1">
+          <div className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {metric.label}
+          </div>
+          {explanationKey && (
+            <ExplanationButton
+              explanationKey={explanationKey}
+              size="sm"
+              align="left"
+            />
+          )}
         </div>
         {metric.delta && (
           <span
