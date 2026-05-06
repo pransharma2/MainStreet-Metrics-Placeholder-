@@ -10,6 +10,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { InsightCard } from "@/components/dashboard/insight-card";
 import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart";
@@ -38,6 +39,9 @@ export default async function DashboardPage() {
 
   const latestUpload = data.latestUpload;
   const showDemoBanner = !data.hasRealData;
+  const showOnboarding =
+    !session.business.onboarded_at &&
+    !session.business.onboarding_dismissed_at;
 
   const displayName =
     session.user.profile?.full_name?.split(" ")[0] ??
@@ -94,6 +98,10 @@ export default async function DashboardPage() {
       }
     >
       <div className="space-y-8">
+        {showOnboarding && (
+          <OnboardingCard businessName={session.business.name} />
+        )}
+
         {showDemoBanner && (
           <div className="relative overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-warm-50 p-5 shadow-soft">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-200/40 blur-3xl" />

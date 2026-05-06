@@ -29,6 +29,11 @@ export interface BusinessRow {
   currency: string;
   timezone: string;
   tagline: string | null;
+  /** Phase 4 — optional business-profile fields. */
+  main_source: string | null;
+  primary_goal: string | null;
+  onboarded_at: string | null;
+  onboarding_dismissed_at: string | null;
   created_by: string;
   created_at: string;
 }

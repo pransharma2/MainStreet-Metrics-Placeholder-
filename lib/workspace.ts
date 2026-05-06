@@ -29,7 +29,9 @@ export async function requireActiveSession(): Promise<ActiveSession> {
 
   const { data: membership, error: memberError } = await supabase
     .from("business_users")
-    .select("business_id, businesses ( id, name, industry, currency, timezone, tagline, created_by, created_at )")
+    .select(
+      "business_id, businesses ( id, name, industry, currency, timezone, tagline, main_source, primary_goal, onboarded_at, onboarding_dismissed_at, created_by, created_at )"
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true })
     .limit(1)

@@ -61,9 +61,23 @@ create table if not exists public.businesses (
   currency    text not null default 'USD',
   timezone    text not null default 'America/Chicago',
   tagline     text,
+  -- Phase 4 onboarding fields (also added idempotently in
+  -- supabase/migrations/0003_phase4_onboarding.sql).
+  main_source              text,
+  primary_goal             text,
+  onboarded_at             timestamptz,
+  onboarding_dismissed_at  timestamptz,
   created_by  uuid not null references auth.users(id) on delete restrict,
   created_at  timestamptz not null default now()
 );
+
+-- Phase 4: ensure onboarding columns exist when applying schema.sql to an
+-- existing project that pre-dates them. (Same as 0003 migration; idempotent.)
+alter table public.businesses
+  add column if not exists main_source              text,
+  add column if not exists primary_goal             text,
+  add column if not exists onboarded_at             timestamptz,
+  add column if not exists onboarding_dismissed_at  timestamptz;
 
 alter table public.businesses enable row level security;
 
