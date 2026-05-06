@@ -8,7 +8,7 @@ import { env } from "@/lib/env";
  * This guarantees the public marketing surface and the public /demo
  * experience stay reachable regardless of session state.
  */
-const PUBLIC_EXACT = new Set<string>(["/"]);
+const PUBLIC_EXACT = new Set<string>(["/", "/request-dashboard"]);
 const PUBLIC_PREFIXES = ["/demo"]; // covers /demo and /demo/*
 
 function isAlwaysPublic(pathname: string): boolean {

@@ -31,6 +31,16 @@ export function FinalCTA() {
                 </Link>
               </Button>
             </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Want us to build it for you?{" "}
+              <Link
+                href="/request-dashboard"
+                className="font-medium text-brand-700 hover:underline"
+              >
+                Request a dashboard setup
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </div>

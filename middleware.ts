@@ -16,6 +16,6 @@ export const config = {
      *
      * /demo and /demo/* are always publicly accessible.
      */
-    "/((?!_next/static|_next/image|favicon.ico|demo(?:/.*)?$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|demo(?:/.*)?$|request-dashboard$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

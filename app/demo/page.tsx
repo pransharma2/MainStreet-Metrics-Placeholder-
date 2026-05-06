@@ -45,7 +45,7 @@ export default function DemoIndexPage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <Link href="/#pricing">
+                <Link href="/request-dashboard">
                   <CalendarClock className="h-4 w-4" />
                   Get a dashboard built for you
                 </Link>

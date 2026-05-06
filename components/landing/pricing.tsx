@@ -30,8 +30,8 @@ const tiers = [
       "Full plain-English insight report",
       "One round of revisions included",
     ],
-    cta: "Get a Growth Dashboard",
-    href: "/signup",
+    cta: "Request a Growth Dashboard",
+    href: "/request-dashboard",
     highlight: true,
   },
   {
@@ -45,8 +45,8 @@ const tiers = [
       "Ongoing support & mapping tweaks",
       "Cancel any time",
     ],
-    cta: "Start Monthly Refresh",
-    href: "/signup",
+    cta: "Request Monthly Refresh",
+    href: "/request-dashboard",
     highlight: false,
   },
 ];

@@ -96,7 +96,7 @@ export default function DemoDashboardPage({
                 </Link>
               </Button>
               <Button asChild variant="ghost">
-                <Link href="/#pricing">
+                <Link href="/request-dashboard">
                   <CalendarClock className="h-4 w-4" />
                   Get a dashboard built for you
                 </Link>
@@ -243,6 +243,9 @@ export default function DemoDashboardPage({
                 <Link href="/signup">Start free</Link>
               </Button>
               <Button asChild variant="secondary">
+                <Link href="/request-dashboard">Request a dashboard setup</Link>
+              </Button>
+              <Button asChild variant="ghost">
                 <Link href="/demo">Try another demo</Link>
               </Button>
             </div>
