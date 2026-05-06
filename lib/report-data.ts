@@ -34,6 +34,13 @@ export interface ReportInput {
   insights: BusinessInsight[];
   latestUpload?: FileUploadRow | null;
   dataQualityItems?: DataQualityItem[] | null;
+  /**
+   * Actual observed transaction date range (min/max). When provided, this
+   * drives the header period. Without it, the report falls back to the
+   * non-zero range of `salesTrend`, which is correct for demo data
+   * (no zero-filling) but wrong for real uploads (zero-filled to 30 days).
+   */
+  dataCoverage?: { start: string; end: string } | null;
 }
 
 export interface Recommendation {
@@ -93,12 +100,37 @@ export function buildReportSummary(input: ReportInput): ReportSummary {
   const orders = input.salesTrend.reduce((s, p) => s + (p.orders || 0), 0);
   const averageOrderValue = orders > 0 ? revenue / orders : 0;
 
-  const start = input.salesTrend[0]?.date;
-  const end = input.salesTrend[input.salesTrend.length - 1]?.date;
+  // Prefer explicit data coverage when given (real uploads). Fall back to
+  // the active (non-zero) span of salesTrend, which is correct for demo
+  // datasets that contain only real days, and avoids reporting the leading
+  // zero-fill from a rolling 30-day window as if it were observed activity.
+  const activePoints = input.salesTrend.filter(
+    (p) => (p.revenue || 0) > 0 || (p.orders || 0) > 0
+  );
+  const start =
+    input.dataCoverage?.start ?? activePoints[0]?.date ?? input.salesTrend[0]?.date;
+  const end =
+    input.dataCoverage?.end ??
+    activePoints[activePoints.length - 1]?.date ??
+    input.salesTrend[input.salesTrend.length - 1]?.date;
   const windowLabel =
     start && end
-      ? `${fmtDate(start)} – ${fmtDate(end)}`
+      ? start === end
+        ? fmtDate(start)
+        : `${fmtDate(start)} – ${fmtDate(end)}`
       : "Recent activity";
+
+  const coverageDays =
+    start && end
+      ? Math.max(
+          1,
+          Math.round(
+            (new Date(`${end}T00:00:00Z`).getTime() -
+              new Date(`${start}T00:00:00Z`).getTime()) /
+              86400000
+          ) + 1
+        )
+      : 0;
 
   const sourceLabel = input.hasRealData && input.latestUpload
     ? `Latest upload: ${input.latestUpload.filename}`
@@ -192,11 +224,21 @@ export function buildReportSummary(input: ReportInput): ReportSummary {
     });
   }
 
-  if (input.salesTrend.length >= 7) {
+  // Only suggest pattern-hunting once there's enough coverage to see one.
+  // A handful of days isn't enough to claim "patterns" exist.
+  if (coverageDays >= 14 && activePoints.length >= 7) {
     recommendations.push({
       id: "strongest_days",
       title: "Look for patterns in your strongest sales days",
       body: "If certain days consistently outperform others, plan promotions, restocks, or staffing around them.",
+    });
+  } else if (input.hasRealData && coverageDays > 0 && coverageDays < 14) {
+    recommendations.push({
+      id: "more_history",
+      title: "Upload more history to unlock trend insights",
+      body: `This file covers about ${coverageDays} day${
+        coverageDays === 1 ? "" : "s"
+      } of activity, so trend comparisons are limited. As more sales data is uploaded, this section will become more informative.`,
     });
   }
 

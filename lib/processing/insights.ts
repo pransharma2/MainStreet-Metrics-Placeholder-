@@ -159,16 +159,24 @@ export function buildInsights(input: InsightBuildInput): InsightInsert[] {
     }
   }
 
-  // 5. Slow-moving products
+  // 5. Slow-moving products — only meaningful when the dataset spans long
+  // enough for a 45-day "no sale" gap to be a real signal rather than an
+  // artefact of a short file.
   if (products.length > 0 && daily.length > 0) {
     const mostRecent = daily[daily.length - 1].sales_date;
+    const earliest = daily[0].sales_date;
     const refMs = new Date(`${mostRecent}T00:00:00Z`).getTime();
-    const slow = products.filter((p) => {
-      if (!p.last_sold_date) return false;
-      const lastMs = new Date(`${p.last_sold_date}T00:00:00Z`).getTime();
-      const days = (refMs - lastMs) / (1000 * 86400);
-      return days >= 45;
-    });
+    const earliestMs = new Date(`${earliest}T00:00:00Z`).getTime();
+    const spanDays = (refMs - earliestMs) / (1000 * 86400) + 1;
+    const slow =
+      spanDays >= 60
+        ? products.filter((p) => {
+            if (!p.last_sold_date) return false;
+            const lastMs = new Date(`${p.last_sold_date}T00:00:00Z`).getTime();
+            const days = (refMs - lastMs) / (1000 * 86400);
+            return days >= 45;
+          })
+        : [];
     if (slow.length > 0) {
       out.push({
         business_id: businessId,

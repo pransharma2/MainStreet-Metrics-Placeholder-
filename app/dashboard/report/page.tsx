@@ -60,6 +60,7 @@ export default async function DashboardReportPage() {
     insights,
     latestUpload: data.latestUpload,
     dataQualityItems,
+    dataCoverage: data.dataCoverage,
   };
 
   return (

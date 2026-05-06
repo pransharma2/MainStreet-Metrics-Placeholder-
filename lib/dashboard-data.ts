@@ -31,6 +31,13 @@ export interface DashboardData {
   insights: BusinessInsight[];
   latestUpload: FileUploadRow | null;
   dataQualityItems: DataQualityItem[] | null;
+  /**
+   * Actual observed transaction date range (min/max `sales_date` from raw
+   * gold daily rows — NOT zero-filled). Drives the report header so users
+   * see "Apr 1 – Apr 5" for a 5-day file instead of the rolling 30-day
+   * analysis window. `null` when no real data exists.
+   */
+  dataCoverage: { start: string; end: string } | null;
 }
 
 const CHANNEL_COLORS = ["#14532d", "#22c55e", "#b45309", "#6366f1", "#e11d48", "#0891b2"];
@@ -114,8 +121,16 @@ export async function loadDashboardData(
       insights: [],
       latestUpload,
       dataQualityItems: null,
+      dataCoverage: null,
     };
   }
+
+  // Actual observed coverage from raw daily rows (gold_daily_sales contains
+  // only days with sales), so the report header reflects real transactions.
+  const dataCoverage: DashboardData["dataCoverage"] = {
+    start: daily[0].sales_date,
+    end: daily[daily.length - 1].sales_date,
+  };
 
   // Load the rest of the gold tables + a sales-channel slice from silver.
   const [
@@ -357,5 +372,6 @@ export async function loadDashboardData(
     insights,
     latestUpload,
     dataQualityItems,
+    dataCoverage,
   };
 }

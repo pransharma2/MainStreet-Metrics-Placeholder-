@@ -36,8 +36,8 @@ export function MetricCard({ metric }: { metric: OverviewMetric }) {
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1">
-          <div className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="flex min-w-0 flex-1 items-start gap-1">
+          <div className="text-[11px] font-medium uppercase leading-snug tracking-wider text-muted-foreground sm:text-xs">
             {metric.label}
           </div>
           {explanationKey && (
@@ -45,13 +45,14 @@ export function MetricCard({ metric }: { metric: OverviewMetric }) {
               explanationKey={explanationKey}
               size="sm"
               align="left"
+              className="mt-px"
             />
           )}
         </div>
         {metric.delta && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1",
+              "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1",
               deltaColor
             )}
           >
@@ -60,11 +61,22 @@ export function MetricCard({ metric }: { metric: OverviewMetric }) {
           </span>
         )}
       </div>
-      <div className="mt-3 font-display text-2xl font-semibold tracking-tight sm:text-[28px]">
+      <div
+        className={cn(
+          "mt-3 font-display font-semibold tracking-tight",
+          // Top product is a free-text value (a product name) and can be
+          // long. Use a smaller, line-clamped style so the card stays
+          // tidy. Numeric values keep the larger display size.
+          metric.id === "top_product"
+            ? "line-clamp-2 break-words text-base leading-snug sm:text-lg"
+            : "break-words text-2xl leading-tight tabular-nums sm:text-[28px]"
+        )}
+        title={metric.id === "top_product" ? metric.value : undefined}
+      >
         {metric.value}
       </div>
       {metric.sublabel && (
-        <div className="mt-1 text-xs text-muted-foreground">
+        <div className="mt-1 line-clamp-2 break-words text-xs leading-snug text-muted-foreground">
           {metric.sublabel}
         </div>
       )}
