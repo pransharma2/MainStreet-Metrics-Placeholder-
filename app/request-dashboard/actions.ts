@@ -11,6 +11,22 @@ export type LeadFormState =
     }
   | null;
 
+// Strict-but-friendly email pattern. Zod's built-in `.email()` is RFC-permissive
+// and lets things like "user@gmail" (no TLD) and "user@.com" through. We want
+// the obvious bad cases rejected before a row hits early_access_leads.
+//
+// Rules enforced by the regex:
+//   - exactly one @
+//   - no spaces or stray punctuation
+//   - local part starts and ends with an alphanumeric
+//   - domain label starts and ends with an alphanumeric (no leading dot, no
+//     "label-" / "-label", no "..")
+//   - a TLD of 2–24 ASCII letters
+const EMAIL_PATTERN =
+  /^[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,24}$/;
+
+const EMAIL_ERROR = "Please enter a valid email address, like owner@example.com.";
+
 const leadSchema = z.object({
   name: z
     .string()
@@ -20,7 +36,11 @@ const leadSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Please enter a valid email."),
+    .min(1, EMAIL_ERROR)
+    .max(254, EMAIL_ERROR)
+    .regex(EMAIL_PATTERN, EMAIL_ERROR)
+    .refine((v) => !v.includes(".."), EMAIL_ERROR)
+    .transform((v) => v.toLowerCase()),
   business_name: z.string().trim().max(160).optional().or(z.literal("")),
   business_type: z.string().trim().max(80).optional().or(z.literal("")),
   sales_source: z.string().trim().max(80).optional().or(z.literal("")),
@@ -89,7 +109,7 @@ export async function submitLeadAction(
 
   const insertRow = {
     name: parsed.data.name,
-    email: parsed.data.email.toLowerCase(),
+    email: parsed.data.email,
     business_name: nullable(parsed.data.business_name),
     business_type: nullable(parsed.data.business_type),
     sales_source: nullable(parsed.data.sales_source),

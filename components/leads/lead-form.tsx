@@ -137,10 +137,17 @@ export function LeadForm({ sourcePage = "/request-dashboard" }: { sourcePage?: s
                 required
                 placeholder="jordan@yourbusiness.com"
                 aria-invalid={fieldErrors.email ? "true" : undefined}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
                 autoComplete="email"
+                inputMode="email"
+                spellCheck={false}
+                autoCapitalize="off"
+                maxLength={254}
               />
               {fieldErrors.email && (
-                <p className="text-xs text-red-700">{fieldErrors.email}</p>
+                <p id="email-error" className="text-xs text-red-700">
+                  {fieldErrors.email}
+                </p>
               )}
             </div>
           </div>
