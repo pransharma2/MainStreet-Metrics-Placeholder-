@@ -39,6 +39,7 @@ Users upload messy CSV/XLSX exports (from Square, Shopify, Etsy, Excel, Google S
 
 ## 2. Current Project Status
 
+<<<<<<< HEAD
 **Phase 1, Phase 2, Phase 3, and Phase 3.5 are complete. Phase 4 is in progress on `feature/adding-Phase-4`.** `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user.
 
 ### Phase 4 — In progress on `feature/adding-Phase-4`
@@ -57,6 +58,9 @@ Next planned Phase 4 chunks (pick by business value, do not start without confir
 - Real Google OAuth (today the button is a "Coming soon" stub).
 
 Phase 4 should **not** add Stripe, real OAuth (until explicitly scheduled), live API connectors, schema changes beyond what's needed for the chunk in flight, or onboarding/lead-form features.
+=======
+**Phase 1, Phase 2, Phase 3, Phase 3.5 (verification + hardening), and Phase 4 chunks 1–3 (public demo + landing conversion) are complete. `npm run typecheck` and `npm run build` both pass cleanly. Phase 3 has not yet been end-to-end exercised against a live Supabase project by the user. Phase 4 work is happening on the `feature/adding-Phase-4` branch.**
+>>>>>>> c07e82643548c0f6b9c8ebe13f048a20022709d0
 
 ### Phase 1 — Frontend MVP (done)
 - Polished frontend-first MVP shell
@@ -141,6 +145,52 @@ Phase 4 should **not** add Stripe, real OAuth (until explicitly scheduled), live
 - `components/dashboard/build-dashboard-button.tsx` and `components/mapping/mapping-table.tsx` — follow `redirect` field in 409 responses (sends user back to mapping when needed).
 - **Fonts self-hosted** — replaced `next/font/google` with `@fontsource-variable/inter` + `@fontsource-variable/fraunces`. `--font-inter` / `--font-display` CSS variables now defined in `app/globals.css`; Tailwind tokens unchanged. Builds no longer fetch `fonts.googleapis.com`.
 - `app/(auth)/login/page.tsx` — wrapped `useSearchParams()` in a `<Suspense>` boundary (pre-existing Phase 2 issue that was masked by the font failure). `npm run build` now passes cleanly end-to-end.
+
+### Phase 4 — Customer-demo & monetization layer (in progress)
+
+Shipped on `feature/adding-Phase-4`. Goal: make the product customer-demo-ready and monetization-ready without weakening the existing app. No Stripe, OAuth, connectors, PDF, or Power BI work in this phase.
+
+**Chunk 1 — Public demo experience (done)**
+- `lib/demo-data.ts` — three demo businesses with the same types as `lib/sample-data.ts` so existing dashboard components render them unchanged:
+  - `boutique` — Willow & Sage Boutique (reuses the existing sample)
+  - `cafe` — Morning Mug Café (new)
+  - `etsy` — North Star Handmade (new)
+  - Each summary carries an explicit `href: /demo/${slug}` with a template-literal type so TypeScript rejects any other target.
+- `components/demo/demo-shell.tsx` — unauthenticated shell (logo + "Live demo" badge + "All demos" / "Try with your own file" / "Start free" CTAs). Never imports any server-only module or auth context.
+- `components/demo/demo-business-card.tsx` — picker card. Whole card is a single `<Link href={summary.href}>` with a visible "View demo dashboard" pill inside. Doc-comment reminds future editors to never point it at `/dashboard`.
+- `app/demo/page.tsx` — public picker (static). Three cards + CTA block.
+- `app/demo/[businessType]/page.tsx` — dynamic public demo dashboard. Reuses `MetricCard`, `SalesTrendChart`, `RevenueByChannelChart`, `TopProductsTable`, `CustomerInsights`, `InsightCard`, `DataQualityCard`. `generateStaticParams` prerenders boutique / cafe / etsy at build time. Invalid slugs → `notFound()`.
+- Middleware hardening (`lib/supabase/middleware.ts` + `middleware.ts`) — early-returns for public paths (`/`, `/demo`, `/demo/*`) before touching Supabase, and the root matcher excludes `demo` / `demo/*` so middleware never runs for them. Protection for `/dashboard/*` and `/api/uploads/*` unchanged.
+- Landing-page links audit — fixed four CTAs on the landing page that were pointing at `/dashboard` as a demo surface (would redirect to `/login` when logged out):
+  - `components/landing/hero.tsx` — "View demo dashboard" → `/demo`
+  - `components/landing/final-cta.tsx` — "View the demo" → `/demo`
+  - `components/landing/dashboard-preview.tsx` — "Open the full demo dashboard" → `/demo`
+  - `components/landing/footer.tsx` — "Demo dashboard" footer link → `/demo`
+
+**Chunk 2 — Landing page conversion (done)**
+- `components/landing/hero.tsx` — new headline "Stop guessing what's working in your small business." + subheadline covering Shopify/Square/Etsy/spreadsheet inputs and the four dashboard outcomes. Tightened to two CTAs: **View demo dashboard → /demo** (primary), **Start free → /signup** (secondary). Removed the old "Upload sample file" → `/dashboard/upload` button that would 307 logged-out users. Added a supporting trust line.
+- `components/landing/pain.tsx` (new) — "Your sales data should not feel like homework." with four cards: Exports are messy / Spreadsheets break / Reports feel too generic / You need answers, not more tabs. Inserted into `app/page.tsx` between `StatStrip` and `HowItWorks`.
+- `components/landing/how-it-works.tsx` — step 2 retitled to "Match your columns" with friendlier copy. Step 3 aligned to "simple recommendations". Added a centered "Try the live demo → /demo" CTA under the three step cards.
+- `components/landing/who-its-for.tsx` — new heading "Built for businesses that are too busy to wrestle with spreadsheets." Expanded from 4 to 6 card types: Boutiques & retailers, Cafés & bakeries, Etsy & handmade, Pop-ups & markets, Home businesses, Small online stores. Grid now 3-up on `lg`.
+- `components/landing/pricing.tsx` — replaced SaaS tiers with **service-first packages**: Starter Dashboard $99 one-time, Growth Dashboard $299 one-time (highlighted), Monthly Refresh from $49/month. "Early pricing while MainStreet Metrics is in beta" pill under the header. Starter CTA → `/demo`; Growth and Monthly Refresh CTAs → `/signup`. Footer line links to `/signup` for self-serve. **No Stripe wiring.**
+- `components/landing/faq.tsx` — replaced all 6 Q&A pairs with a customer-facing set: data/spreadsheets, file types, Shopify/Square connectors, privacy, done-for-you, large companies.
+- `components/landing/final-cta.tsx` — new heading "Ready to see what your sales data is trying to tell you?" CTA order is now **View demo dashboard → /demo** (primary), **Start free → /signup** (secondary).
+
+**Chunks not yet started in this phase:**
+- Chunk 4 — Onboarding + business profile (requires a small schema migration `0003_phase4.sql` adding `industry`, `timezone`, `tagline`, `main_source`, `primary_goal`, `onboarded_at` to `businesses`; RLS unchanged).
+- Chunk 5 — Dashboard explanation layer (deterministic "what this means / why it matters / next step" tooltips + panel).
+- Chunk 6 — Insight report page at `/dashboard/report`, `window.print()` only (no PDF lib).
+- Chunk 7 — Settings / business profile polish.
+- Chunk 8 — Lead CTA path (`early_access_leads` table + friendly form, anon-insert RLS only).
+- Chunk 9 — Small product polish + README + CLAUDE.md refresh.
+
+**Guardrails honored so far in Phase 4:**
+- No Supabase schema or migration changes yet (chunks 1–2 are UI-only).
+- No RLS weakening, no service-role exposure, no multi-business-model changes.
+- No Stripe, OAuth, connectors, PDF generation, or Power BI.
+- No Next.js upgrade, no `pnpm`/`yarn` reintroduction.
+- Existing polished UI preserved — all Phase 4 work reuses existing Tailwind tokens, `Button`, `Card`, `Badge`, typography, and section rhythm.
+- Server-only modules still not imported by any client component.
 
 ---
 
