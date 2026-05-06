@@ -14,38 +14,8 @@ export type ProfileFormState = {
 
 // Allowed values are kept as plain text in the DB so future additions don't
 // need a schema migration. We just normalize/whitelist on save.
-
-export const INDUSTRY_OPTIONS = [
-  "Boutique",
-  "Café / bakery",
-  "Etsy / handmade shop",
-  "Local retail",
-  "Pop-up / market seller",
-  "Home business",
-  "Online store",
-  "Other",
-] as const;
-
-export const CURRENCY_OPTIONS = ["USD", "CAD", "GBP", "EUR", "Other"] as const;
-
-export const SOURCE_OPTIONS = [
-  "Shopify",
-  "Square",
-  "Etsy",
-  "Excel / spreadsheet",
-  "Google Sheets",
-  "Other POS",
-  "Not sure yet",
-] as const;
-
-export const GOAL_OPTIONS = [
-  "Understand revenue trends",
-  "Find top products",
-  "Understand repeat customers",
-  "Track sales by channel",
-  "Clean messy sales files",
-  "Get a simple business report",
-] as const;
+// Option arrays moved to `lib/onboarding-options.ts` so client components can
+// import them without pulling in this "use server" module.
 
 const profileSchema = z.object({
   name: z

@@ -11,6 +11,8 @@ import {
   GOAL_OPTIONS,
   INDUSTRY_OPTIONS,
   SOURCE_OPTIONS,
+} from "@/lib/onboarding-options";
+import {
   completeOnboardingAction,
   type ProfileFormState,
 } from "@/app/dashboard/onboarding/actions";

@@ -10,6 +10,8 @@ import {
   GOAL_OPTIONS,
   INDUSTRY_OPTIONS,
   SOURCE_OPTIONS,
+} from "@/lib/onboarding-options";
+import {
   updateBusinessProfileAction,
   type ProfileFormState,
 } from "@/app/dashboard/onboarding/actions";
