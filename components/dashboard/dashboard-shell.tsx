@@ -8,6 +8,7 @@ import {
   UploadCloud,
   Sparkles,
   ShieldCheck,
+  FileText,
   Settings,
   LifeBuoy,
   ChevronDown,
@@ -23,6 +24,7 @@ const primary = [
   { href: "/dashboard/upload", label: "Uploads", icon: UploadCloud },
   { href: "/dashboard/mapping", label: "Column mapping", icon: Sparkles },
   { href: "/dashboard/data-quality", label: "File check", icon: ShieldCheck },
+  { href: "/dashboard/report", label: "Report", icon: FileText },
 ];
 
 const secondary = [
@@ -61,7 +63,7 @@ export function DashboardShell({
     <div className="min-h-screen bg-muted/20">
       <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="hidden w-[260px] shrink-0 border-r border-border/60 bg-white lg:flex lg:flex-col">
+        <aside className="hidden w-[260px] shrink-0 border-r border-border/60 bg-white lg:flex lg:flex-col print:hidden">
           <div className="flex h-16 items-center border-b border-border/60 px-5">
             <Logo size="sm" />
           </div>
@@ -155,7 +157,7 @@ export function DashboardShell({
         {/* Main column */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Topbar */}
-          <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur print:hidden">
             <div className="flex h-16 items-center justify-between px-5 sm:px-8">
               <div className="min-w-0">
                 {title && (

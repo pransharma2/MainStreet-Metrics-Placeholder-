@@ -33,8 +33,13 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/dashboard" className="hover:text-foreground">
+              <Link href="/demo" className="hover:text-foreground">
                 Demo dashboard
+              </Link>
+            </li>
+            <li>
+              <Link href="/request-dashboard" className="hover:text-foreground">
+                Request a dashboard
               </Link>
             </li>
           </ul>

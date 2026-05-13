@@ -61,9 +61,23 @@ create table if not exists public.businesses (
   currency    text not null default 'USD',
   timezone    text not null default 'America/Chicago',
   tagline     text,
+  -- Phase 4 onboarding fields (also added idempotently in
+  -- supabase/migrations/0003_phase4_onboarding.sql).
+  main_source              text,
+  primary_goal             text,
+  onboarded_at             timestamptz,
+  onboarding_dismissed_at  timestamptz,
   created_by  uuid not null references auth.users(id) on delete restrict,
   created_at  timestamptz not null default now()
 );
+
+-- Phase 4: ensure onboarding columns exist when applying schema.sql to an
+-- existing project that pre-dates them. (Same as 0003 migration; idempotent.)
+alter table public.businesses
+  add column if not exists main_source              text,
+  add column if not exists primary_goal             text,
+  add column if not exists onboarded_at             timestamptz,
+  add column if not exists onboarding_dismissed_at  timestamptz;
 
 alter table public.businesses enable row level security;
 
@@ -572,3 +586,37 @@ create policy "gold_business_insights_select" on public.gold_business_insights f
 create policy "gold_business_insights_cud" on public.gold_business_insights for all
   using (public.is_business_member(business_id))
   with check (public.is_business_member(business_id));
+
+-- =============================================================================
+-- early_access_leads  (Phase 4 — public lead capture for /request-dashboard)
+--
+-- Also created idempotently in supabase/migrations/0004_phase4_leads.sql.
+-- Public anon + authenticated users can INSERT only. No SELECT/UPDATE/DELETE
+-- policy is defined for them, so RLS blocks those operations. Service-role
+-- connections (admin tooling) bypass RLS automatically.
+-- =============================================================================
+create table if not exists public.early_access_leads (
+  id                        uuid primary key default gen_random_uuid(),
+  name                      text not null,
+  email                     text not null,
+  business_name             text,
+  business_type             text,
+  sales_source              text,
+  estimated_monthly_orders  text,
+  goal                      text,
+  message                   text,
+  source_page               text,
+  status                    text not null default 'new',
+  user_id                   uuid references auth.users(id) on delete set null,
+  business_id               uuid references public.businesses(id) on delete set null,
+  created_at                timestamptz not null default now()
+);
+create index if not exists early_access_leads_created_idx on public.early_access_leads (created_at desc);
+create index if not exists early_access_leads_email_idx   on public.early_access_leads (lower(email));
+alter table public.early_access_leads enable row level security;
+drop policy if exists "early_access_leads_insert_anyone" on public.early_access_leads;
+create policy "early_access_leads_insert_anyone"
+  on public.early_access_leads
+  for insert
+  to anon, authenticated
+  with check (true);

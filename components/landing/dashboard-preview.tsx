@@ -172,7 +172,7 @@ export function DashboardPreview() {
 
           <div className="mt-8 text-center">
             <Button asChild size="lg">
-              <Link href="/dashboard">
+              <Link href="/demo">
                 Open the full demo dashboard
                 <ArrowRight className="h-4 w-4" />
               </Link>

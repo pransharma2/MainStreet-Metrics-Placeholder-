@@ -1,23 +1,25 @@
-import { FileUp, Settings2, BarChart3 } from "lucide-react";
+import Link from "next/link";
+import { FileUp, Settings2, BarChart3, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const steps = [
   {
     icon: FileUp,
     badge: "Step 1",
     title: "Upload your sales file",
-    body: "Drag and drop a CSV or Excel export from Square, Shopify, Etsy, or your own spreadsheet. We handle messy columns and mixed formats.",
+    body: "Start with a CSV or Excel export from Shopify, Square, Etsy, or a spreadsheet. We handle messy columns and mixed formats.",
   },
   {
     icon: Settings2,
     badge: "Step 2",
-    title: "Review the column mapping",
-    body: "We auto-detect your columns and suggest a clean mapping. You confirm or adjust — we save it for next time so uploads are 1-click after that.",
+    title: "Match your columns",
+    body: "We suggest the right fields automatically. You can adjust anything before we clean your data — and we'll remember your choices next time.",
   },
   {
     icon: BarChart3,
     badge: "Step 3",
     title: "Get your dashboard",
-    body: "Revenue trends, top products, customer insights, and plain-English recommendations — all waiting for you, no SQL required.",
+    body: "See revenue trends, top products, customer insights, and simple recommendations — no SQL, no spreadsheets, no guesswork.",
   },
 ];
 
@@ -64,6 +66,19 @@ export function HowItWorks() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <Button asChild size="lg">
+            <Link href="/demo">
+              Try the live demo
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <p className="mt-3 text-xs text-muted-foreground">
+            No signup required — pick a sample business and explore a real
+            dashboard in a few seconds.
+          </p>
         </div>
       </div>
     </section>

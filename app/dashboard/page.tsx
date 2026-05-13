@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, Filter, Sparkles, UploadCloud, Info } from "lucide-react";
+import { Filter, UploadCloud, Info, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,6 +10,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { InsightCard } from "@/components/dashboard/insight-card";
 import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart";
@@ -17,6 +18,7 @@ import { RevenueByChannelChart } from "@/components/dashboard/revenue-by-channel
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { CustomerInsights } from "@/components/dashboard/customer-insights";
 import { DataQualityCard } from "@/components/dashboard/data-quality-card";
+import { ExplanationButton } from "@/components/dashboard/explanation-card";
 import { requireActiveSession } from "@/lib/workspace";
 import { loadDashboardData } from "@/lib/dashboard-data";
 import {
@@ -38,6 +40,9 @@ export default async function DashboardPage() {
 
   const latestUpload = data.latestUpload;
   const showDemoBanner = !data.hasRealData;
+  const showOnboarding =
+    !session.business.onboarded_at &&
+    !session.business.onboarding_dismissed_at;
 
   const displayName =
     session.user.profile?.full_name?.split(" ")[0] ??
@@ -84,14 +89,20 @@ export default async function DashboardPage() {
             <Filter className="h-4 w-4" />
             Last 30 days
           </Button>
-          <Button variant="secondary" size="sm" disabled>
-            <Download className="h-4 w-4" />
-            Export
+          <Button asChild size="sm">
+            <Link href="/dashboard/report">
+              <FileText className="h-4 w-4" />
+              View report
+            </Link>
           </Button>
         </div>
       }
     >
       <div className="space-y-8">
+        {showOnboarding && (
+          <OnboardingCard businessName={session.business.name} />
+        )}
+
         {showDemoBanner && (
           <div className="relative overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-warm-50 p-5 shadow-soft">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-200/40 blur-3xl" />
@@ -142,7 +153,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>Sales trend</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>Sales trend</CardTitle>
+                  <ExplanationButton explanationKey="sales_trend" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData
                     ? "Revenue over the last 30 days from your uploaded file."
@@ -168,7 +182,14 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Revenue by channel</CardTitle>
+              <div className="flex items-center gap-1.5">
+                <CardTitle>Revenue by channel</CardTitle>
+                <ExplanationButton
+                  explanationKey="revenue_by_channel"
+                  size="sm"
+                  align="right"
+                />
+              </div>
               <CardDescription>
                 {data.hasRealData && data.channelRevenue
                   ? "Where your sales are coming from."
@@ -185,7 +206,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>Top products</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>Top products</CardTitle>
+                  <ExplanationButton explanationKey="top_products" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData
                     ? "Your best sellers by revenue."
@@ -201,7 +225,14 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Customer mix</CardTitle>
+              <div className="flex items-center gap-1.5">
+                <CardTitle>Customer mix</CardTitle>
+                <ExplanationButton
+                  explanationKey="customer_mix"
+                  size="sm"
+                  align="right"
+                />
+              </div>
               <CardDescription>
                 {data.hasRealData
                   ? "New vs. repeat vs. inactive."
@@ -226,9 +257,11 @@ export default async function DashboardPage() {
                   : "Plain-English insights, each with a suggested next step. Upload your file to see real ones."}
               </p>
             </div>
-            <Button variant="ghost" size="sm" disabled>
-              <Sparkles className="h-4 w-4" />
-              Regenerate
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/dashboard/report">
+                <FileText className="h-4 w-4" />
+                View full report
+              </Link>
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -289,7 +322,10 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle>File check</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle>File check</CardTitle>
+                  <ExplanationButton explanationKey="data_quality" size="sm" />
+                </div>
                 <CardDescription>
                   {data.hasRealData && data.dataQualityItems
                     ? "We checked your latest file — here's what we found."

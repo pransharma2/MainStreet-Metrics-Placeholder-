@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
 import { StatStrip } from "@/components/landing/stat-strip";
+import { Pain } from "@/components/landing/pain";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { WhatYouGet } from "@/components/landing/what-you-get";
 import { InsightsPreview } from "@/components/landing/insights-preview";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatStrip />
+        <Pain />
         <HowItWorks />
         <WhatYouGet />
         <InsightsPreview />

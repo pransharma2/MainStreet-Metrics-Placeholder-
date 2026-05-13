@@ -1,10 +1,25 @@
+# Dependencies
 node_modules
+
+# Next.js build output
 .next
 out
+
+# Environment variables — never commit local secrets
 .env
 .env.local
-.env*.local
+.env.*.local
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Logs
 *.log
+
+# OS / editor
 .DS_Store
+
+# Deployment / tooling caches
 .vercel
 .turbo

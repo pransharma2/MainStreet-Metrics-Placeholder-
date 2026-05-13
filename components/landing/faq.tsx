@@ -6,28 +6,28 @@ import { cn } from "@/lib/utils";
 
 const faqs = [
   {
-    q: "Do I need a data team or any technical skills?",
-    a: "No. If you can export a CSV from Shopify, Square, Etsy, or Excel, you can use MainStreet Metrics. We handle the cleanup, mapping, and math.",
+    q: "Do I need to know data or spreadsheets?",
+    a: "No. MainStreet Metrics is designed for business owners who just want clear answers from their sales files. If you can export a CSV from Shopify, Square, Etsy, or Excel, you're set.",
   },
   {
-    q: "What file formats can I upload?",
-    a: "CSV and Excel today. In the next phase we'll support Google Sheets links and direct connectors for Shopify, Square, and Etsy.",
+    q: "What files can I upload?",
+    a: "CSV and Excel files from tools like Shopify, Square, Etsy, Google Sheets, or other POS systems. We auto-detect your columns and suggest a clean mapping you can adjust.",
   },
   {
-    q: "What if my columns are named oddly?",
-    a: "That's the whole point. We auto-detect columns and suggest a clean mapping. You confirm it once, and we save it for next time.",
+    q: "Does this connect directly to Shopify or Square yet?",
+    a: "Not yet. The current version starts with exported files, which keeps setup simple and your data in your hands. Direct integrations are planned later.",
   },
   {
     q: "Is my data private?",
-    a: "Yes. Your uploads belong to your business only. We isolate each workspace and never share or train on your data.",
+    a: "Yes. Each business workspace is isolated, and your dashboard is built only from the files you upload. We never share or train on your data.",
   },
   {
-    q: "How long does it take to get a dashboard?",
-    a: "For a single CSV, usually a few minutes. We promise a working dashboard within 48 hours even for messier multi-file setups.",
+    q: "Can you build the dashboard for me?",
+    a: "Yes. The done-for-you Starter, Growth, and Monthly Refresh packages are designed for owners who'd rather send their files and receive a clean dashboard ready to share.",
   },
   {
-    q: "Can I use this alongside Power BI or Looker?",
-    a: "Yes. Our clean tables (Silver and Gold layers) are designed to plug into any BI tool you want later.",
+    q: "Is this for large companies?",
+    a: "No. It's built for small businesses — boutiques, cafés, Etsy shops, local retailers, pop-ups, and home businesses — that need simple, useful reporting without a data team.",
   },
 ];
 

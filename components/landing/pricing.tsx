@@ -1,55 +1,52 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const tiers = [
   {
-    name: "Starter",
-    price: "$0",
-    period: "free while in beta",
-    description: "For owners who want to try it with a single file.",
+    name: "Starter Dashboard",
+    price: "$99",
+    period: "one-time",
+    description: "For owners who want to test the idea with a single file.",
     features: [
-      "1 business workspace",
-      "Up to 3 file uploads",
-      "CSV & Excel support",
-      "Friendly column mapping",
-      "Core dashboard & insights",
+      "We clean one sales export",
+      "Basic revenue & product dashboard",
+      "Top 5 plain-English insights",
+      "Ready in under 48 hours",
     ],
-    cta: "Start free",
-    href: "/signup",
+    cta: "View demo dashboard",
+    href: "/demo",
     highlight: false,
   },
   {
-    name: "Main Street",
-    price: "$29",
-    period: "/ month",
-    description: "For small shops that want a refreshed dashboard every month.",
+    name: "Growth Dashboard",
+    price: "$299",
+    period: "one-time",
+    description: "For shops juggling a few channels that need the full picture.",
     features: [
-      "Unlimited uploads",
-      "Monthly auto-refresh",
-      "Saved mapping templates",
-      "PDF exports",
-      "Priority support",
+      "Up to 3 sales exports combined",
+      "Revenue, product, customer & channel analysis",
+      "Full plain-English insight report",
+      "One round of revisions included",
     ],
-    cta: "Pick Main Street",
-    href: "/signup",
+    cta: "Request a Growth Dashboard",
+    href: "/request-dashboard",
     highlight: true,
   },
   {
-    name: "Storefront",
-    price: "$79",
+    name: "Monthly Refresh",
+    price: "from $49",
     period: "/ month",
-    description: "For shops selling across 3+ channels who want it weekly.",
+    description: "For businesses that want a fresh dashboard every month.",
     features: [
-      "Everything in Main Street",
-      "Weekly refresh",
-      "Multi-channel reconciliation",
-      "Team seats",
-      "Custom insights",
+      "Monthly dashboard refresh",
+      "Updated insights every month",
+      "Ongoing support & mapping tweaks",
+      "Cancel any time",
     ],
-    cta: "Pick Storefront",
-    href: "/signup",
+    cta: "Request Monthly Refresh",
+    href: "/request-dashboard",
     highlight: false,
   },
 ];
@@ -63,12 +60,16 @@ export function Pricing() {
             Pricing preview
           </div>
           <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Simple pricing, built for small businesses.
+            Done-for-you dashboards, priced for small shops.
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Start free while we're in beta. Upgrade when you're ready for
-            scheduled refreshes and more channels.
+            Send us your sales files — we&apos;ll send back a clean dashboard
+            with plain-English insights.
           </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-warm-200 bg-warm-50 px-3 py-1 text-xs font-medium text-warm-800">
+            <Sparkles className="h-3.5 w-3.5" />
+            Early pricing while MainStreet Metrics is in beta
+          </div>
         </div>
 
         <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -121,6 +122,14 @@ export function Pricing() {
             </div>
           ))}
         </div>
+
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Prefer to try it yourself first?{" "}
+          <Link href="/signup" className="font-medium text-brand-700 hover:underline">
+            Start free
+          </Link>{" "}
+          and upload your own file — no credit card.
+        </p>
       </div>
     </section>
   );
